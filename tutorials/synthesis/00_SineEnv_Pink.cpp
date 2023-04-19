@@ -21,32 +21,116 @@
 using namespace al;
 using namespace std;
 
-// //From https://github.com/allolib-s21/notes-Mitchell57:
-// class Kick : public SynthVoice {
-//  public:
-//   // Unit generators
-//   gam::Pan<> mPan;
-//   gam::Sine<> mOsc;
-//   gam::Decay<> mDecay; // Added decay envelope for pitch
-//   gam::AD<> mAmpEnv; // Changed amp envelope from Env<3> to AD<>
-//   //note: AD = Attack, Decay, makes the sound "snappier"
+//From https://github.com/allolib-s21/notes-Mitchell57:
+class Kick : public SynthVoice {
+ public:
+  // Unit generators
+  gam::Pan<> mPan;
+  gam::Sine<> mOsc;
+  gam::Decay<> mDecay; // Added decay envelope for pitch
+  gam::AD<> mAmpEnv; // Changed amp envelope from Env<3> to AD<>
 
-//   void init() override {
-//     // Intialize amplitude envelope
-//     // - Minimum attack (to make it thump)
-//     // - Short decay
-//     // - Maximum amplitude
-//     mAmpEnv.attack(0.01);
-//     mAmpEnv.decay(0.3);
-//     mAmpEnv.amp(1.0);
+  void init() override {
+    // Intialize amplitude envelope
+    // - Minimum attack (to make it thump)
+    // - Short decay
+    // - Maximum amplitude
+    mAmpEnv.attack(0.01);
+    mAmpEnv.decay(0.3);
+    mAmpEnv.amp(1.0);
 
-//     // Initialize pitch decay 
-//     mDecay.decay(0.3);
+    // Initialize pitch decay 
+    mDecay.decay(0.3);
 
-//     createInternalTriggerParameter("amplitude", 0.3, 0.0, 1.0);
-//     createInternalTriggerParameter("frequency", 60, 20, 5000);
-//   }
-// };
+    createInternalTriggerParameter("amplitude", 0.3, 0.0, 1.0);
+    createInternalTriggerParameter("frequency", 60, 20, 5000);
+  }
+
+  // The audio processing function
+  void onProcess(AudioIOData& io) override {
+    mOsc.freq(getInternalParameterValue("frequency"));
+    mPan.pos(0);
+    // (removed parameter control for attack and release)
+
+    while (io()) {
+      mOsc.freqMul(mDecay()); // Multiply pitch oscillator by next decay value
+      float s1 = mOsc() *  mAmpEnv() * getInternalParameterValue("amplitude");
+      float s2;
+      mPan(s1, s1, s2);
+      io.out(0) += s1;
+      io.out(1) += s2;
+    }
+
+    if (mAmpEnv.done()){ 
+      free();
+    }
+  }
+
+  void onTriggerOn() override { mAmpEnv.reset(); mDecay.reset(); }
+
+  void onTriggerOff() override { mAmpEnv.release(); mDecay.finish(); }
+};
+
+//From https://github.com/allolib-s21/notes-Mitchell57:
+//commented out reverbs bc I think they're in his "theory" class
+class Snare : public SynthVoice {
+ public:
+  // Unit generators
+  gam::Pan<> mPan;
+  gam::AD<> mAmpEnv; // Amplitude envelope
+  gam::Sine<> mOsc; // Main pitch osc (top of drum)
+  gam::Sine<> mOsc2; // Secondary pitch osc (bottom of drum)
+  gam::Decay<> mDecay; // Pitch decay for oscillators
+  // gam::ReverbMS<> reverb;	// Schroeder reverberator
+  gam::Burst mBurst; // Noise to simulate rattle/chains
+
+
+  void init() override {
+    // Initialize burst 
+    mBurst = gam::Burst(10000, 5000, 0.3);
+
+    // Initialize amplitude envelope
+    mAmpEnv.attack(0.01);
+    mAmpEnv.decay(0.01);
+    mAmpEnv.amp(1.0);
+
+    // Initialize pitch decay 
+    mDecay.decay(0.8);
+
+    // reverb.resize(gam::FREEVERB);
+		// reverb.decay(0.5); // Set decay length, in seconds
+		// reverb.damping(0.2); // Set high-frequency damping factor in [0, 1]
+
+  }
+
+  // The audio processing function
+  void onProcess(AudioIOData& io) override {
+    mOsc.freq(200);
+    mOsc2.freq(150);
+
+    while (io()) {
+      
+      // Each mDecay() call moves it forward (I think), so we only want
+      // to call it once per sample
+      float decay = mDecay();
+      mOsc.freqMul(decay);
+      mOsc2.freqMul(decay);
+
+      float amp = mAmpEnv();
+      float s1 = mBurst() + (mOsc() * amp * 0.1)+ (mOsc2() * amp * 0.05);
+      // s1 += reverb(s1) * 0.2;
+      float s2;
+      mPan(s1, s1, s2);
+      io.out(0) += s1;
+      io.out(1) += s2;
+    }
+    
+    if (mAmpEnv.done()) free();
+  }
+  void onTriggerOn() override { mBurst.reset(); mAmpEnv.reset(); mDecay.reset();}
+  
+  void onTriggerOff() override { mAmpEnv.release(); mDecay.finish(); }
+};
 
 class SineEnv : public SynthVoice {
 public:
@@ -107,8 +191,9 @@ public:
     // We need to let the synth know that this voice is done
     // by calling the free(). This takes the voice out of the
     // rendering chain
-    if (mAmpEnv.done() && (mEnvFollow.value() < 0.001f))
+    if (mAmpEnv.done() && (mEnvFollow.value() < 0.001f)){
       free();
+    }
   }
 
   // The graphics processing function
@@ -232,6 +317,22 @@ public:
     synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
   }
 
+  //From Mitchell's code again:
+  void playKick(float freq, float time, float duration = 0.5, float amp = 0.2, float attack = 0.01, float decay = 0.1)
+  {
+      auto *voice = synthManager.synth().getVoice<Kick>();
+      // amp, freq, attack, release, pan
+      vector<VariantValue> params = vector<VariantValue>({amp, freq, 0.01, 0.1, 0.0});
+      voice->setTriggerParams(params);
+      synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
+  }
+  void playSnare(float time, float duration = 0.3)
+  {
+      auto *voice = synthManager.synth().getVoice<Snare>();
+      // amp, freq, attack, release, pan
+      synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
+  }
+
   //My added code:
   void chord(char rootNote, float playTime, float sus, float vol){
     const float B3 = 233.08;
@@ -259,11 +360,11 @@ public:
   float sustain(int bpm, float duration){
     //May only work for 4/4 time, i'm rusty on my music theory
     //Duration = 4 for whole note, 2 for half, 1 for quarter (in 4/4), etc
-    return (bpm * duration) / 60;
+    return (60 * duration) / bpm;
   }
 
   float timeElapsed(int bpm, float beatsElapsed){
-    return (bpm * beatsElapsed) / 60;
+    return (60 * beatsElapsed) / bpm;
   }
 
   void chordSequence1(float sequenceStart){
@@ -283,8 +384,9 @@ public:
     playNote(196.00, timeElapsed(70, 3.5) + sequenceStart, sustain(70, .5), vol); //G3
   }
 
-  void melody1(float sequenceStart){
+  void melody1(float sequenceStart, int bpm){
     //start .75 of a beat in
+    //type of note * 1 / (bpm / 60)
     float vol = .5;
     const float C5 = 523.25;
     const float D5 = 587.33;
@@ -293,16 +395,16 @@ public:
     const float G5 = 783.99;
     const float A5 = 880.00;
     playNote(F5, sequenceStart, .1);
-    playNote(G5, timeElapsed(70, .125) + sequenceStart, .1);
-    playNote(A5, timeElapsed(70, .25) + sequenceStart, .1);
-    playNote(G5, timeElapsed(70, .5) + sequenceStart, .1);
-    playNote(F5, timeElapsed(70, .75) + sequenceStart, .1);
-    playNote(E5, timeElapsed(70, 1) + sequenceStart, .1);
-    playNote(D5, timeElapsed(70, 1.25) + sequenceStart, .1);
-    playNote(C5, timeElapsed(70, 1.375) + sequenceStart, .1);
+    playNote(G5, timeElapsed(bpm, .125) + sequenceStart, 0.05, 0.2, 0.75);
+    playNote(A5, timeElapsed(bpm, .25) + sequenceStart, 0.05, 0.2, 0.75);
+    playNote(G5, timeElapsed(bpm, .5) + sequenceStart, 0.05, 0.2, 0.75);
+    playNote(F5, timeElapsed(bpm, .75) + sequenceStart, 0.05, 0.2, 0.75);
+    playNote(E5, timeElapsed(bpm, 1) + sequenceStart, 0.05, 0.2, 0.75);
+    playNote(D5, timeElapsed(bpm, 1.25) + sequenceStart, 0.05, 0.2, 0.75);
+    playNote(C5, timeElapsed(bpm, 1.375) + sequenceStart, 0.05, 0.2, 0.75);
   }
 
-  void melody2(float sequenceStart){
+  void melody2(float sequenceStart, int bpm){
     //start .75 of a beat in
     float vol = .5;
     const float C5 = 523.25;
@@ -312,24 +414,42 @@ public:
     const float G5 = 783.99;
     const float A5 = 880.00;
     playNote(F5, sequenceStart, sustain(70, .125), vol);
-    playNote(G5, timeElapsed(70, .125) + sequenceStart, sustain(70, .125), vol);
-    playNote(A5, timeElapsed(70, .25) + sequenceStart, sustain(70, .25), vol);
-    playNote(G5, timeElapsed(70, .5) + sequenceStart, sustain(70, .25), vol);
-    playNote(F5, timeElapsed(70, .75) + sequenceStart, sustain(70, .25), vol);
-    playNote(E5, timeElapsed(70, 1) + sequenceStart, sustain(70, .25), vol);
-    playNote(D5, timeElapsed(70, 1.25) + sequenceStart, sustain(70, .125), vol);
-    playNote(C5, timeElapsed(70, 1.375) + sequenceStart, sustain(70, .25), vol);
+    playNote(G5, timeElapsed(bpm, .125) + sequenceStart, sustain(70, .125), vol);
+    playNote(A5, timeElapsed(bpm, .25) + sequenceStart, sustain(70, .25), vol);
+    playNote(G5, timeElapsed(bpm, .5) + sequenceStart, sustain(70, .25), vol);
+    playNote(F5, timeElapsed(bpm, .75) + sequenceStart, sustain(70, .25), vol);
+    playNote(E5, timeElapsed(bpm, 1) + sequenceStart, sustain(70, .25), vol);
+    playNote(D5, timeElapsed(bpm, 1.25) + sequenceStart, sustain(70, .125), vol);
+    playNote(C5, timeElapsed(bpm, 1.375) + sequenceStart, sustain(70, .25), vol);
 
-    playNote(C5, timeElapsed(70, 2.5) + sequenceStart, sustain(70, .25), vol);
-    playNote(D5, timeElapsed(70, 2.75) + sequenceStart, sustain(70, .25), vol);
-    playNote(C5, timeElapsed(70, 3) + sequenceStart, sustain(70, .25), vol);
+    playNote(C5, timeElapsed(bpm, 2.5) + sequenceStart, sustain(70, .25), vol);
+    playNote(D5, timeElapsed(bpm, 2.75) + sequenceStart, sustain(70, .25), vol);
+    playNote(C5, timeElapsed(bpm, 3) + sequenceStart, sustain(70, .25), vol);
+  }
+
+  //snare beat that keeps time
+  void metronome(float sequenceStart, int bpm){
+    playSnare(((i*60)/bpm)+sequenceStart);
+    for(int i = 0; i < 20; i++){
+      playSnare(((i*60)/bpm*4)+sequenceStart);
+    }
+  }
+
+  //kick beat that keeps time
+  void kickBeat(float sequenceStart, int bpm){
+
   }
 
   void playTune(){ //one measure of drums, then the tune!
+    //snare does the metronome claps
+    //kick does offbeat
+
     // chordSequence1(0.0);
-    // chordSequence2(timeElapsed(70, 4));
-    melody1(timeElapsed(70, .75));
-    // melody2(timeElapsed(70, 4.75));  
+    // chordSequence2(timeElapsed(133, 4));
+    metronome(0, 133);
+    melody1(timeElapsed(133, .75), 133);
+    melody2(timeElapsed(133, 4.75), 133);  
+    // kickBeat(0,133);
   }
 
 };
