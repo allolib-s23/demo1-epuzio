@@ -283,8 +283,6 @@ class MyApp : public App {
   {
       auto *voice = synthManager.synth().getVoice<Kick>();
       // amp, freq, attack, release, pan
-      vector<VariantValue> params = vector<VariantValue>({amp, freq, 0.01, 0.1, 0.0});
-      voice->setTriggerParams(params);
       // voice->setTriggerParams({amp, freq, 0.01, 0.1, 0.0});
       // voice->setInternalParameterValue("freq", freq);
       synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);

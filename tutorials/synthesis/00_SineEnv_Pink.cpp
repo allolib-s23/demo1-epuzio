@@ -87,15 +87,16 @@ class Snare : public SynthVoice {
 
   void init() override {
     // Initialize burst 
-    mBurst = gam::Burst(10000, 5000, 0.3);
+    mBurst = gam::Burst(10000, 5000, 0.1);
+    //editing last number of burst shortens/makes sound snappier
 
     // Initialize amplitude envelope
     mAmpEnv.attack(0.01);
     mAmpEnv.decay(0.01);
-    mAmpEnv.amp(1.0);
+    mAmpEnv.amp(0.05);
 
     // Initialize pitch decay 
-    mDecay.decay(0.8);
+    mDecay.decay(0.1);
 
     // reverb.resize(gam::FREEVERB);
 		// reverb.decay(0.5); // Set decay length, in seconds
@@ -360,78 +361,78 @@ public:
   float sustain(int bpm, float duration){
     //May only work for 4/4 time, i'm rusty on my music theory
     //Duration = 4 for whole note, 2 for half, 1 for quarter (in 4/4), etc
-    return (60 * duration) / bpm;
+    return (bpm * duration) / 60;
   }
 
   float timeElapsed(int bpm, float beatsElapsed){
-    return (60 * beatsElapsed) / bpm;
+    return (bpm * beatsElapsed) / 60;
   }
 
-  void chordSequence1(float sequenceStart){
-    float vol = .3;
-    chord('b', 0 + sequenceStart, .01, vol);
-    chord('b', timeElapsed(70, 2) + sequenceStart, .01, vol);
-    chord('a', timeElapsed(70, 3) + sequenceStart, .01, vol);
-    playNote(196.00, timeElapsed(70, 3.5) + sequenceStart, .01, vol); //G3
+  void chordSequence1(float sequenceStart, int bpm){
+    float vol = .7;
+    chord('b', 0 + sequenceStart, 0.1, vol);
+    chord('b', timeElapsed(bpm, 2) + sequenceStart, 0.1, vol);
+    chord('a', timeElapsed(bpm, 3) + sequenceStart, 0.1, vol);
+    playNote(196.00, timeElapsed(bpm, 3.5) + sequenceStart, 0.1, vol); //G3
   }  
 
-  void chordSequence2(float sequenceStart){
-    float vol = .3;
-    chord('b', 0 + sequenceStart, sustain(70, 2), vol);
-    chord('b', timeElapsed(70, 2) + sequenceStart, sustain(70, 1.5), vol);
-    playNote(440.00, timeElapsed(70, 3.5) + sequenceStart, sustain(70, .5), vol); //A4
-    chord('a', timeElapsed(70, 3) + sequenceStart, sustain(70, .5), vol);
-    playNote(196.00, timeElapsed(70, 3.5) + sequenceStart, sustain(70, .5), vol); //G3
+  void chordSequence2(float sequenceStart, int bpm){
+    float vol = .7;
+    chord('b', 0 + sequenceStart,  0.1, vol);
+    chord('b', timeElapsed(bpm, 2) + sequenceStart, 0.1, vol);
+    playNote(440.00, timeElapsed(bpm, 2.75) + sequenceStart, 0.1, vol); //A4
+    chord('a', timeElapsed(bpm, 3) + sequenceStart, 0.1, vol);
+    playNote(196.00, timeElapsed(bpm, 3.5) + sequenceStart, 0.1, vol); //G3
   }
 
   void melody1(float sequenceStart, int bpm){
     //start .75 of a beat in
     //type of note * 1 / (bpm / 60)
-    float vol = .5;
+    float vol = 1;
     const float C5 = 523.25;
     const float D5 = 587.33;
     const float E5 = 659.25;
     const float F5 = 698.46;
     const float G5 = 783.99;
     const float A5 = 880.00;
-    playNote(F5, sequenceStart, .1);
-    playNote(G5, timeElapsed(bpm, .125) + sequenceStart, 0.05, 0.2, 0.75);
-    playNote(A5, timeElapsed(bpm, .25) + sequenceStart, 0.05, 0.2, 0.75);
-    playNote(G5, timeElapsed(bpm, .5) + sequenceStart, 0.05, 0.2, 0.75);
-    playNote(F5, timeElapsed(bpm, .75) + sequenceStart, 0.05, 0.2, 0.75);
-    playNote(E5, timeElapsed(bpm, 1) + sequenceStart, 0.05, 0.2, 0.75);
-    playNote(D5, timeElapsed(bpm, 1.25) + sequenceStart, 0.05, 0.2, 0.75);
-    playNote(C5, timeElapsed(bpm, 1.375) + sequenceStart, 0.05, 0.2, 0.75);
+    playNote(F5, sequenceStart, 0.05, vol, 0.75);
+    playNote(G5, timeElapsed(bpm, .125) + sequenceStart, 0.05, vol, 0.75);
+    playNote(A5, timeElapsed(bpm, .25) + sequenceStart, 0.05, vol, 0.75);
+    playNote(G5, timeElapsed(bpm, .5) + sequenceStart, 0.05, vol, 0.75);
+    playNote(F5, timeElapsed(bpm, .75) + sequenceStart, 0.05, vol, 0.75);
+    playNote(E5, timeElapsed(bpm, 1) + sequenceStart, 0.05, vol, 0.75);
+    playNote(D5, timeElapsed(bpm, 1.25) + sequenceStart, 0.05, vol, 0.75);
+    playNote(C5, timeElapsed(bpm, 1.375) + sequenceStart, 0.05, vol, 0.75);
   }
 
   void melody2(float sequenceStart, int bpm){
     //start .75 of a beat in
-    float vol = .5;
+    float vol = 1;
     const float C5 = 523.25;
     const float D5 = 587.33;
     const float E5 = 659.25;
     const float F5 = 698.46;
     const float G5 = 783.99;
     const float A5 = 880.00;
+    float sus = .05;
     playNote(F5, sequenceStart, sustain(70, .125), vol);
-    playNote(G5, timeElapsed(bpm, .125) + sequenceStart, sustain(70, .125), vol);
-    playNote(A5, timeElapsed(bpm, .25) + sequenceStart, sustain(70, .25), vol);
-    playNote(G5, timeElapsed(bpm, .5) + sequenceStart, sustain(70, .25), vol);
-    playNote(F5, timeElapsed(bpm, .75) + sequenceStart, sustain(70, .25), vol);
-    playNote(E5, timeElapsed(bpm, 1) + sequenceStart, sustain(70, .25), vol);
-    playNote(D5, timeElapsed(bpm, 1.25) + sequenceStart, sustain(70, .125), vol);
-    playNote(C5, timeElapsed(bpm, 1.375) + sequenceStart, sustain(70, .25), vol);
+    playNote(G5, timeElapsed(bpm, .125) + sequenceStart, sus, vol);
+    playNote(A5, timeElapsed(bpm, .25) + sequenceStart, sus, vol);
+    playNote(G5, timeElapsed(bpm, .5) + sequenceStart, sus, vol);
+    playNote(F5, timeElapsed(bpm, .75) + sequenceStart, sus, vol);
+    playNote(E5, timeElapsed(bpm, 1) + sequenceStart, sus, vol);
+    playNote(D5, timeElapsed(bpm, 1.25) + sequenceStart, sus, vol);
+    playNote(C5, timeElapsed(bpm, 1.375) + sequenceStart, sus, vol);
 
-    playNote(C5, timeElapsed(bpm, 2.5) + sequenceStart, sustain(70, .25), vol);
-    playNote(D5, timeElapsed(bpm, 2.75) + sequenceStart, sustain(70, .25), vol);
-    playNote(C5, timeElapsed(bpm, 3) + sequenceStart, sustain(70, .25), vol);
+    playNote(C5, timeElapsed(bpm, 2.5) + sequenceStart, sus, vol);
+    playNote(D5, timeElapsed(bpm, 2.75) + sequenceStart, sus, vol);
+    playNote(C5, timeElapsed(bpm, 3) + sequenceStart, sus, vol);
   }
 
   //snare beat that keeps time
   void metronome(float sequenceStart, int bpm){
-    playSnare(((i*60)/bpm)+sequenceStart);
     for(int i = 0; i < 20; i++){
-      playSnare(((i*60)/bpm*4)+sequenceStart);
+      playSnare(((i*60)/bpm)+sequenceStart);
     }
   }
 
@@ -444,12 +445,13 @@ public:
     //snare does the metronome claps
     //kick does offbeat
 
-    // chordSequence1(0.0);
-    // chordSequence2(timeElapsed(133, 4));
-    metronome(0, 133);
-    melody1(timeElapsed(133, .75), 133);
-    melody2(timeElapsed(133, 4.75), 133);  
-    // kickBeat(0,133);
+    int bpm = 120;
+    chordSequence1(0.0, bpm);
+    chordSequence2(timeElapsed(133, 4), bpm);
+    metronome(0, bpm);
+    // melody1(timeElapsed(133, .75), bpm);
+    // melody2(timeElapsed(133, 4.75), bpm);  
+    // kickBeat(0,bpm);
   }
 
 };
