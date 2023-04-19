@@ -1,7 +1,7 @@
 //Copied from 01_SineEnv.cpp
 //Recreation of the opening notes of Boy's A Liar by PinkPanthress
 //Song is in F major (one b flat)
-//Used Mitchell's code for a kick (here): https://github.com/allolib-s21/notes-Mitchell57
+//Used Mitchell's code for a kick + snare (here): https://github.com/allolib-s21/notes-Mitchell57
 
 #include <cstdio> // for printing to stdout
 
@@ -42,8 +42,8 @@ class Kick : public SynthVoice {
     // Initialize pitch decay 
     mDecay.decay(0.3);
 
-    createInternalTriggerParameter("amplitude", 0.3, 0.0, 1.0);
-    createInternalTriggerParameter("frequency", 60, 20, 5000);
+    createInternalTriggerParameter("amplitude", 0.5, 0.0, 1.0);
+    createInternalTriggerParameter("frequency", 150, 20, 5000);
   }
 
   // The audio processing function
@@ -93,7 +93,7 @@ class Snare : public SynthVoice {
     // Initialize amplitude envelope
     mAmpEnv.attack(0.01);
     mAmpEnv.decay(0.01);
-    mAmpEnv.amp(0.05);
+    mAmpEnv.amp(0.005);
 
     // Initialize pitch decay 
     mDecay.decay(0.1);
@@ -319,7 +319,7 @@ public:
   }
 
   //From Mitchell's code again:
-  void playKick(float freq, float time, float duration = 0.5, float amp = 0.2, float attack = 0.01, float decay = 0.1)
+  void playKick(float freq, float time, float duration = 0.5, float amp = 0.4, float attack = 0.01, float decay = 0.1)
   {
       auto *voice = synthManager.synth().getVoice<Kick>();
       // amp, freq, attack, release, pan
@@ -357,57 +357,33 @@ public:
           playNote(A4, playTime, sus, vol);
     }
   }  
-  
-  float sustain(int bpm, float duration){
-    //May only work for 4/4 time, i'm rusty on my music theory
-    //Duration = 4 for whole note, 2 for half, 1 for quarter (in 4/4), etc
-    return (bpm * duration) / 60;
-  }
 
   float timeElapsed(int bpm, float beatsElapsed){
-    return (bpm * beatsElapsed) / 60;
+    return (60 * beatsElapsed) / (bpm);
   }
 
   void chordSequence1(float sequenceStart, int bpm){
-    float vol = .7;
-    chord('b', 0 + sequenceStart, 0.1, vol);
-    chord('b', timeElapsed(bpm, 2) + sequenceStart, 0.1, vol);
-    chord('a', timeElapsed(bpm, 3) + sequenceStart, 0.1, vol);
-    playNote(196.00, timeElapsed(bpm, 3.5) + sequenceStart, 0.1, vol); //G3
+    float vol = .4;
+    float sus = .05;
+    chord('b', 0 + sequenceStart, sus, vol);
+    chord('b', timeElapsed(bpm, 2) + sequenceStart, sus, vol);
+    chord('a', timeElapsed(bpm, 3) + sequenceStart, sus, vol);
+    playNote(196.00, timeElapsed(bpm, 3.5) + sequenceStart, sus, vol); //G3
   }  
 
   void chordSequence2(float sequenceStart, int bpm){
-    float vol = .7;
-    chord('b', 0 + sequenceStart,  0.1, vol);
-    chord('b', timeElapsed(bpm, 2) + sequenceStart, 0.1, vol);
-    playNote(440.00, timeElapsed(bpm, 2.75) + sequenceStart, 0.1, vol); //A4
-    chord('a', timeElapsed(bpm, 3) + sequenceStart, 0.1, vol);
-    playNote(196.00, timeElapsed(bpm, 3.5) + sequenceStart, 0.1, vol); //G3
+    float vol = .4;
+    float sus = .05;
+    chord('b', 0 + sequenceStart,  sus, vol);
+    chord('b', timeElapsed(bpm, 2) + sequenceStart, sus, vol);
+    playNote(440.00, timeElapsed(bpm, 2.75) + sequenceStart, sus, vol); //A4
+    chord('a', timeElapsed(bpm, 3) + sequenceStart, sus, vol);
+    playNote(196.00, timeElapsed(bpm, 3.5) + sequenceStart, sus, vol); //G3
   }
 
   void melody1(float sequenceStart, int bpm){
     //start .75 of a beat in
-    //type of note * 1 / (bpm / 60)
-    float vol = 1;
-    const float C5 = 523.25;
-    const float D5 = 587.33;
-    const float E5 = 659.25;
-    const float F5 = 698.46;
-    const float G5 = 783.99;
-    const float A5 = 880.00;
-    playNote(F5, sequenceStart, 0.05, vol, 0.75);
-    playNote(G5, timeElapsed(bpm, .125) + sequenceStart, 0.05, vol, 0.75);
-    playNote(A5, timeElapsed(bpm, .25) + sequenceStart, 0.05, vol, 0.75);
-    playNote(G5, timeElapsed(bpm, .5) + sequenceStart, 0.05, vol, 0.75);
-    playNote(F5, timeElapsed(bpm, .75) + sequenceStart, 0.05, vol, 0.75);
-    playNote(E5, timeElapsed(bpm, 1) + sequenceStart, 0.05, vol, 0.75);
-    playNote(D5, timeElapsed(bpm, 1.25) + sequenceStart, 0.05, vol, 0.75);
-    playNote(C5, timeElapsed(bpm, 1.375) + sequenceStart, 0.05, vol, 0.75);
-  }
-
-  void melody2(float sequenceStart, int bpm){
-    //start .75 of a beat in
-    float vol = 1;
+    float vol = 2;
     const float C5 = 523.25;
     const float D5 = 587.33;
     const float E5 = 659.25;
@@ -415,7 +391,28 @@ public:
     const float G5 = 783.99;
     const float A5 = 880.00;
     float sus = .05;
-    playNote(F5, sequenceStart, sustain(70, .125), vol);
+    playNote(F5, sequenceStart, sus, vol, 0.75);
+    playNote(G5, timeElapsed(bpm, .125) + sequenceStart, sus, vol, 0.75);
+    playNote(A5, timeElapsed(bpm, .25) + sequenceStart, sus, vol, 0.75);
+    playNote(G5, timeElapsed(bpm, .5) + sequenceStart, sus, vol, 0.75);
+    playNote(F5, timeElapsed(bpm, .75) + sequenceStart, sus, vol, 0.75);
+    playNote(E5, timeElapsed(bpm, 1) + sequenceStart, sus, vol, 0.75);
+    playNote(D5, timeElapsed(bpm, 1.25) + sequenceStart, sus, vol, 0.75);
+    playNote(C5, timeElapsed(bpm, 1.375) + sequenceStart, sus, vol, 0.75);
+  }
+
+  void melody2(float sequenceStart, int bpm){
+    //start .75 of a beat in
+    float vol = 2;
+    const float A4 = 440.00;
+    const float C5 = 523.25;
+    const float D5 = 587.33;
+    const float E5 = 659.25;
+    const float F5 = 698.46;
+    const float G5 = 783.99;
+    const float A5 = 880.00;
+    float sus = .05;
+    playNote(F5, sequenceStart, sus, vol);
     playNote(G5, timeElapsed(bpm, .125) + sequenceStart, sus, vol);
     playNote(A5, timeElapsed(bpm, .25) + sequenceStart, sus, vol);
     playNote(G5, timeElapsed(bpm, .5) + sequenceStart, sus, vol);
@@ -424,34 +421,55 @@ public:
     playNote(D5, timeElapsed(bpm, 1.25) + sequenceStart, sus, vol);
     playNote(C5, timeElapsed(bpm, 1.375) + sequenceStart, sus, vol);
 
-    playNote(C5, timeElapsed(bpm, 2.5) + sequenceStart, sus, vol);
-    playNote(D5, timeElapsed(bpm, 2.75) + sequenceStart, sus, vol);
-    playNote(C5, timeElapsed(bpm, 3) + sequenceStart, sus, vol);
+    playNote(A4, timeElapsed(bpm, 2.5) + sequenceStart, sus, vol);
+    playNote(A4, timeElapsed(bpm, 3) + sequenceStart, sus, vol);
+
+    playNote(C5, timeElapsed(bpm, 3.25) + sequenceStart, sus, vol);
+    playNote(D5, timeElapsed(bpm, 3.5) + sequenceStart, sus, vol);
+    playNote(C5, timeElapsed(bpm, 3.75) + sequenceStart, sus, vol);
   }
 
   //snare beat that keeps time
   void metronome(float sequenceStart, int bpm){
-    for(int i = 0; i < 20; i++){
-      playSnare(((i*60)/bpm)+sequenceStart);
+    for(int i = 0; i < 8; i = i+1){ //this does not run 32 times.
+      playSnare(((i*60)/(bpm)) + sequenceStart);
     }
   }
 
   //kick beat that keeps time
   void kickBeat(float sequenceStart, int bpm){
-
+    playKick(150, sequenceStart);
+    playKick(150, timeElapsed(bpm, 1) + sequenceStart);
+    playKick(150, timeElapsed(bpm, 2) + sequenceStart);
+    playKick(150, timeElapsed(bpm, 2.75) + sequenceStart);
+    playKick(150, timeElapsed(bpm, 3.5) + sequenceStart);
   }
 
   void playTune(){ //one measure of drums, then the tune!
-    //snare does the metronome claps
-    //kick does offbeat
+    int bpm = 60;
+    //drums only - 1 measure
+    metronome(0, bpm); //snare keeps time to music
+    kickBeat(0,bpm); //kick is syncopated
+    kickBeat(4,bpm);
+    
+    chordSequence2(timeElapsed(bpm, 4), bpm); //add chord - 1 measure
 
-    int bpm = 120;
-    chordSequence1(0.0, bpm);
-    chordSequence2(timeElapsed(133, 4), bpm);
-    metronome(0, bpm);
-    // melody1(timeElapsed(133, .75), bpm);
-    // melody2(timeElapsed(133, 4.75), bpm);  
-    // kickBeat(0,bpm);
+    //drums and melody and chord - 2 measures
+    chordSequence1(8.0, bpm);
+    chordSequence1(timeElapsed(bpm, 12), bpm);
+    melody1(timeElapsed(bpm, 8.75), bpm);
+    melody2(timeElapsed(bpm, 12.75), bpm); 
+    metronome(8, bpm);
+    kickBeat(8,bpm);
+    kickBeat(12,bpm);
+
+    chordSequence1(16.0, bpm); //repeat another 2 measures
+    chordSequence1(timeElapsed(bpm, 20), bpm);
+    melody1(timeElapsed(bpm, 16.75), bpm);
+    melody2(timeElapsed(bpm, 20.75), bpm); 
+    metronome(16, bpm);
+    kickBeat(16,bpm);
+    kickBeat(20,bpm);
   }
 
 };
