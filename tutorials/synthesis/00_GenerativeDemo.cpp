@@ -27,7 +27,7 @@ using namespace al;
 using namespace std;
 
 //from https://github.com/AlloSphere-Research-Group/allolib_playground/blob/master/tutorials/synthesis/07_AddSyn.cpp
-cclass AddSyn : public SynthVoice {
+class AddSyn : public SynthVoice {
 public:
   gam::Sine<> mOsc;
   gam::Sine<> mOsc1;
