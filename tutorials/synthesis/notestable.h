@@ -14,20 +14,17 @@ float getFreq(string n, int octave, int transpose = 0){ //chorus effect!
     };
     float dist = notes[n] + transpose + ((octave - 1) * 12) +1;
     float frequency = freqFromA(dist);
-    cout << "notes " << n << octave << ": "<< notes[n]<< endl;
-    cout << "dist: " << dist << endl;
-    cout << "freq: " << frequency << "!" << endl;
     return frequency;
 }
 
-vector<float> getFifthChordFreqs(string n, int octave, int inversion){
+vector<float> getFifthChordFreqs(string n, int octave, int transpose, int inversion){
     float rootFreq, thirdFreq, fifthFreq;
     vector<float> frequencies = {rootFreq, thirdFreq, fifthFreq};
     unordered_map<string, float> notes{
         {"A", 0}, {"A#", 1}, {"Bb", 1}, {"B", 2}, {"C", 3}, {"C#", 4}, {"Db", 4}, {"D", 5}, {"D#", 6}, 
         {"Eb", 6}, {"E", 7}, {"F", 8}, {"F#", 9}, {"Gb", 9}, {"G", 10}, {"G#", 11}, {"Ab", 11}
     };
-    float dist = notes[n] + ((octave - 1) * 12) +1;
+    float dist = notes[n] + transpose + ((octave - 1) * 12) +1;
     rootFreq = freqFromA(dist);
     switch(inversion){
         case 0: //Root Position
