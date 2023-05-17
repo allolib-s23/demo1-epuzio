@@ -705,27 +705,27 @@ public:
 // We make an app.
 class MyApp : public App {
 public:
-  SoundFileStreaming player;
-    std::vector<float> buffer;
-    bool loop = true;
-
   // GUI manager for SineEnv voices
   // The name provided determines the name of the directory
   // where the presets and sequences are stored
-  SynthGUIManager<SineEnv> synthManager{"SineEnv"};
+  SynthGUIManager<SquareWave> synthManager{"SquareWave"};
 
   // This function is called right after the window is created
   // It provides a grphics context to initialize ParameterGUI
   // It's also a good place to put things that should
   // happen once at startup.
   void onCreate() override {
-	  
-    navControl().active(false); 
+    navControl().active(false); // Disable navigation via keyboard, since we
+                                // will be using keyboard for note triggering
+
+    // Set sampling rate for Gamma objects from app's audio
     gam::sampleRate(audioIO().framesPerSecond());
 
     imguiInit();
 
+    // Play example sequence. Comment this line to start from scratch
     playTune();
+    // synthManager.synthSequencer().playSequence("synth1.synthSequence");
     synthManager.synthRecorder().verbose(true);
   }
 
@@ -742,7 +742,7 @@ public:
     imguiEndFrame();
   }
 
-  The graphics callback function.
+  // The graphics callback function.
   void onDraw(Graphics &g) override {
     g.clear();
     // Render the synth's graphics
@@ -754,7 +754,6 @@ public:
 
   // Whenever a key is pressed, this function is called
   bool onKeyDown(Keyboard const &k) override {
-	 
     if (ParameterGUI::usingKeyboard()) { // Ignore keys if GUI is using
                                          // keyboard
       return true;
@@ -785,6 +784,7 @@ public:
   }
 
   void onExit() override { imguiShutdown(); }
+
 
 //---- ADDED STUFF: ------
   //From Professor Conrad's Frere Jacques Demo:
@@ -848,7 +848,7 @@ void playHihat(float time, float duration = 0.3)
 
 //ADDED CODE:
     //Helper functions, consts
-    const float bpm = 130;
+    float bpm = 130;
     const float beat = 60 / bpm;
     const float measure = beat * 4;
 
@@ -875,7 +875,7 @@ void playHihat(float time, float duration = 0.3)
 	
 //SONG COMPONENTS:
   //bassline:
-  void bassPattern(int sw, int sequenceStart){ //4 measures
+  void bassPattern(int sw, int sequenceStart, int transpose){ //4 measures
       switch(sw){
         case 1: //[X X X X] (start .5 of a beat in)
           for(int j = 0; j < 4; j++){
@@ -1029,19 +1029,19 @@ void endingMelody(float sequenceStart, int transpose){
 		  if(intro == 3){ //hi hat kick and bass
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
+			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), transpose);
 		  }
 		  if(intro == 2){ //hi hat, kick, chords, accompanyment, bass
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
+			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), transpose);
 			  mainChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
 			  accompanyingChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
 		  }
 		  if(intro == 1){ //hi hat, kick, chords, accompanyment, bass
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
+			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), transpose);
 			  mainChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
 			  accompanyingChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
 		  }
@@ -1050,14 +1050,14 @@ void endingMelody(float sequenceStart, int transpose){
 	  //bridge
 	  playHihat(3, beatsElapsed(4 * intro)); //riser
 	  bassRNG = rand() % 4; //reroll bass pattern RNG
-	bassPattern(bassRNG, beatsElapsed(4 * lengthofIntro));
+	bassPattern(bassRNG, beatsElapsed(4 * lengthofIntro), transpose);
 	  transitionalChords(beatsElapsed(4 * lengthofIntro), transpose);
 	  
 	  //chorus (it's the same as case 4.... i'll make it poppier in future)
 	  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 	   playHihat(HiHatRNG, beatsElapsed(4 * (lengthofIntro+1)));
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+1));
+			  bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+1), transpose);
 			  mainChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 			  accompanyingChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 				      
@@ -1069,7 +1069,7 @@ void endingMelody(float sequenceStart, int transpose){
 	//outro
 	  endingMelody(beatsElapsed(4 * (lengthofIntro+2)), transpose);
 	bassRNG = rand() % 4; //reroll bass pattern RNG
-	bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+2));
+	bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+2), transpose);
 	endingChords(beatsElapsed(4 * (lengthofIntro+2)), transpose);
 			  
 	  
