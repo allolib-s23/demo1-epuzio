@@ -20,6 +20,8 @@
 #include "al/ui/al_Parameter.hpp"
 
 #include "notestable.h" //theory class I wrote to make transposition a little easier
+#include <stdlib.h> //rand
+#include <time.h> //rand also
 
 using namespace al;
 using namespace std;
@@ -169,6 +171,113 @@ public:
     mEnvLow.triggerRelease();
     mEnvUp.triggerRelease();
   }
+};
+
+//from Hunter's plucked string demo:
+class PluckedString : public SynthVoice {
+public:
+    float mAmp;
+    float mDur;
+    float mPanRise;
+    gam::Pan<> mPan;
+    gam::NoiseWhite<> noise;
+    gam::Decay<> env;
+    gam::MovingAvg<> fil {2};
+    gam::Delay<float, gam::ipl::Trunc> delay;
+    gam::ADSR<> mAmpEnv;
+    gam::EnvFollow<> mEnvFollow;
+    gam::Env<2> mPanEnv;
+
+    // Additional members
+    Mesh mMesh;
+
+    virtual void init(){
+        mAmp  = 1;
+        mDur = 2;
+        mAmpEnv.levels(0, 1, 1, 0);
+        mPanEnv.curve(4);
+        env.decay(0.1);
+        delay.maxDelay(1./27.5);
+        delay.delay(1./440.0);
+
+
+        addDisc(mMesh, 1.0, 30);
+        createInternalTriggerParameter("amplitude", 0.1, 0.0, 1.0);
+        createInternalTriggerParameter("frequency", 60, 20, 5000);
+        createInternalTriggerParameter("attackTime", 0.001, 0.001, 1.0);
+        createInternalTriggerParameter("releaseTime", 3.0, 0.1, 10.0);
+        createInternalTriggerParameter("sustain", 0.7, 0.0, 1.0);
+        createInternalTriggerParameter("Pan1", 0.0, -1.0, 1.0);
+        createInternalTriggerParameter("Pan2", 0.0, -1.0, 1.0);
+        createInternalTriggerParameter("PanRise", 0.0, -1.0, 1.0); // range check
+    }
+    
+//    void reset(){ env.reset(); }
+
+    float operator() (){
+        return (*this)(noise()*env());
+    }
+    float operator() (float in){
+        return delay(
+                     fil( delay() + in )
+                     );
+    }
+
+    virtual void onProcess(AudioIOData& io) override {
+
+        while(io()){
+            mPan.pos(mPanEnv());
+            float s1 =  (*this)() * mAmpEnv() * mAmp;
+            float s2;
+            mEnvFollow(s1);
+            mPan(s1, s1,s2);
+            io.out(0) += s1;
+            io.out(1) += s2;
+        }
+        if(mAmpEnv.done() && (mEnvFollow.value() < 0.001)) free();
+
+    }
+
+    virtual void onProcess(Graphics &g) {
+          float frequency = getInternalParameterValue("frequency");
+          float amplitude = getInternalParameterValue("amplitude");
+          g.pushMatrix();
+          g.translate(amplitude,  amplitude, -4);
+          //g.scale(frequency/2000, frequency/4000, 1);
+          float scaling = 0.1;
+          g.scale(scaling * frequency/200, scaling * frequency/400, scaling* 1);
+          g.color(mEnvFollow.value(), frequency/1000, mEnvFollow.value()* 10, 0.4);
+          g.draw(mMesh);
+          g.popMatrix();
+    }
+ 
+    virtual void onTriggerOn() override {
+        updateFromParameters();
+        mAmpEnv.reset();
+        env.reset();
+        delay.zero();
+    }
+
+    virtual void onTriggerOff() override {
+        mAmpEnv.triggerRelease();
+    }
+
+    void updateFromParameters() {
+        mPanEnv.levels(getInternalParameterValue("Pan1"),
+                       getInternalParameterValue("Pan2"),
+                       getInternalParameterValue("Pan1"));
+        mPanRise = getInternalParameterValue("PanRise");
+        delay.freq(getInternalParameterValue("frequency"));
+        mAmp = getInternalParameterValue("amplitude");
+        mAmpEnv.levels()[1] = 1.0;
+        mAmpEnv.levels()[2] = getInternalParameterValue("sustain");
+        mAmpEnv.lengths()[0] = getInternalParameterValue("attackTime");
+        mAmpEnv.lengths()[3] = getInternalParameterValue("releaseTime");
+
+        mPanEnv.lengths()[0] = mDur * (1-mPanRise);
+        mPanEnv.lengths()[1] = mDur * mPanRise;
+    }
+
 };
 
 // from christine's demo: https://github.com/allolib-s23/demo1-christinetu15/blob/main/tutorials/synthesis/demo-christine.cpp#L880
@@ -721,12 +830,17 @@ void playHihat(float time, float duration = 0.3)
     synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
   }
 
+//From Hunter's plucked string demo:
   void playBass(float freq, float time, float duration, float amp = .9, float attack = 0.9, float decay = 0.001)
   {
-    auto *voice = synthManager.synth().getVoice<SquareWave>();
-    // amp, freq, attack, release, pan
-    vector<VariantValue> params = vector<VariantValue>({amp, freq, attack, decay, 0.0});
-    voice->setTriggerParams(params);
+    auto *voice = synthManager.synth().getVoice<PluckedString>();
+
+    voice->setInternalParameterValue("frequency", freq);
+    voice->setInternalParameterValue("amplitude", amp);
+    voice->setInternalParameterValue("attackTime", attack);
+    voice->setInternalParameterValue("sustain", sustain);
+    voice->setInternalParameterValue("releaseTime", release);
+    voice->setInternalParameterValue("pan", 0.0);
     synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
   }
 
@@ -815,7 +929,7 @@ void kickPattern(int sequenceStart){ //4 measures of the same kick drum pattern
 }
 	
 //hihat:
-void hiHats(int sw, int sequenceStart){ //3 different variations
+void hiHatPattern(int sw, int sequenceStart){ //3 different variations
 	switch(sw){
 	case 1:
 	    playHiHat(beatsElapsed(3) + sequenceStart);
@@ -840,7 +954,7 @@ void hiHats(int sw, int sequenceStart){ //3 different variations
 		playHiHat(beatsElapsed(13.5) + sequenceStart);
 		playHiHat(beatsElapsed(14.5) + sequenceStart);	
 		playHiHat(beatsElapsed(15.5) + sequenceStart);
-	case 4: 
+	case 0: //play nothing 
 	}
 }
 	
@@ -891,8 +1005,45 @@ void endingMelody(float sequenceStart, int transpose){
 	playNote(getFreq("D", 4, transpose), beatsElapsed(15) + sequenceStart, eighth);
 	playNote(getFreq("D", 4, transpose), beatsElapsed(15.5) + sequenceStart, whole);
 }
+	
+//Putting it all together!
   void playTune(){
-
+	srand((unsigned) time(NULL)); //seed the random number
+	int key = rand() % 12; //this is the number of steps we'll transpose the composition up or down
+	  int HiHatRNG, bassRNG;
+	cout << "STEPS FROM A: " << key << endl;
+	  
+	  for(int intro = 1 + rand() % 4; intro > 0; intro--){ // intro is the number of 4 measure components we'll have of the song before the bridge to the chorus
+		  kickPattern(beatsElapsed(0 + (sequenceStart*4)));
+			kickPattern(beatsElapsed(4) + (sequenceStart*4));
+			 kickPattern(beatsElapsed(8) + (sequenceStart*4));
+		kickPattern(beatsElapsed(12) + (sequenceStart*4));
+		  playHihat(HiHatRNG, beatsElapsed(4 * (4 - intro)));
+		  
+		  if(intro == 4){ // hi hat and kick only
+			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
+		  }
+		  if(intro == 3){ //hi hat kick and bass
+			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
+			  bassRNG = rand() % 4; //reroll bass pattern RNG
+			  bassPattern(bassRNG, beatsElapsed(4 * (4 - intro)));
+		  }
+		  if(intro == 2){ //hi hat, kick, chords, accompanyment, bass
+			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
+			  bassRNG = rand() % 4; //reroll bass pattern RNG
+			  bassPattern(bassRNG, beatsElapsed(4 * (4 - intro)));
+			  mainChordProgression(beatsElapsed(4 * (4 - intro)), key);
+			  accompanyingChordProgression(beatsElapsed(4 * (4 - intro)), key);
+		  }
+		  if(intro == 1){ //hi hat, kick, chords, accompanyment, bass
+			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
+			  bassRNG = rand() % 4; //reroll bass pattern RNG
+			  bassPattern(bassRNG, beatsElapsed(4 * (4 - intro)));
+			  mainChordProgression(beatsElapsed(4 * (4 - intro)), key);
+			  accompanyingChordProgression(beatsElapsed(4 * (4 - intro)), key);
+		  }
+	  }
+		  
   }
 };
 
