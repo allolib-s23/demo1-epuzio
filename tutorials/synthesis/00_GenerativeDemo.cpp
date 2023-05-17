@@ -743,14 +743,14 @@ void playHiHat(float time, float duration = 0.3)
   }
 
   void playFifthChord(vector<float> freq, float playTime, float sus){
-    playNote(freq[0], playTime, sus);
-    playNote(freq[1], playTime + .05, sus);
-    playNote(freq[2], playTime + .1, sus);
+    playNote(freq[0], playTime, sus, .05);
+    playNote(freq[1], playTime, sus, .05);
+    playNote(freq[2], playTime, sus, .05);
   }  
 
   void playThird(vector<float> freq, float playTime, float sus){
-    playNote(freq[0], playTime, sus);
-    playNote(freq[1], playTime + .05, sus);
+    playNote(freq[0], playTime, sus, .05);
+    playNote(freq[1], playTime, sus, .05);
   }
 	
 //SONG COMPONENTS:
