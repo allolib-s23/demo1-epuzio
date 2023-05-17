@@ -930,7 +930,7 @@ void endingMelody(float sequenceStart, int transpose){
 	  } //note to self: make this a switch please
 	
 	  //bridge
-	  playHiHat(3, beatsElapsed(4 * intro)); //riser
+	  playHiHat(3, beatsElapsed(4 * lengthofIntro)); //riser
 	  bassRNG = rand() % 4; //reroll bass pattern RNG
 	bassPattern(bassRNG, beatsElapsed(4 * lengthofIntro), key);
 	  transitionalChords(beatsElapsed(4 * lengthofIntro), key);
@@ -943,7 +943,7 @@ void endingMelody(float sequenceStart, int transpose){
 			  mainChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 			  accompanyingChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 				      
-			kickPattern(beatsElapsed((4*(lengthofIntro+1)));
+			kickPattern(beatsElapsed(4*(lengthofIntro+1)));
 			kickPattern(beatsElapsed(4 * (lengthofIntro+1)));
 			 kickPattern(beatsElapsed(4 * (lengthofIntro+1)));
 		kickPattern(beatsElapsed(4 * (lengthofIntro+1)));
