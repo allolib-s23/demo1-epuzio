@@ -1,5 +1,10 @@
-//Touched up version of Boy's A Liar demo
-//Used Mitchell's code for a kick + snare (here): https://github.com/allolib-s21/notes-Mitchell57
+/* 
+  Original pseudo-randomized song
+  Parameters: chord, drum progressions, length of song
+  Next steps: integrating visuals, lengthening the song
+  Inspired (and partially borrowed from) from Devi McCallion's work as Girls Rituals and Mom
+  Songs referenced: S.N. Morning, I [Mess] Everything Up, Un See Through, 2, Joyfulthought, Bloodeater
+*/ 
 
 #include <cstdio> // for printing to stdout
 #include "Gamma/Analysis.h"
@@ -14,14 +19,13 @@
 #include "al/ui/al_ControlGUI.hpp"
 #include "al/ui/al_Parameter.hpp"
 
-//added:
-#include "notestable.h"
+#include "notestable.h" //theory class I wrote to make transposition a little easier
 
 using namespace al;
 using namespace std;
 
 //from https://github.com/AlloSphere-Research-Group/allolib_playground/blob/master/tutorials/synthesis/07_AddSyn.cpp
-class AddSyn : public SynthVoice {
+cclass AddSyn : public SynthVoice {
 public:
   gam::Sine<> mOsc;
   gam::Sine<> mOsc1;
@@ -86,7 +90,303 @@ public:
     createInternalTriggerParameter("freqUp4", 9.0, 0.1, 10);
     createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
   }
+
+  virtual void onProcess(AudioIOData &io) override {
+    // Parameters will update values once per audio callback
+    float freq = getInternalParameterValue("frequency");
+    mOsc.freq(freq);
+    mOsc1.freq(getInternalParameterValue("freqStri1") * freq);
+    mOsc2.freq(getInternalParameterValue("freqStri2") * freq);
+    mOsc3.freq(getInternalParameterValue("freqStri3") * freq);
+    mOsc4.freq(getInternalParameterValue("freqLow1") * freq);
+    mOsc5.freq(getInternalParameterValue("freqLow2") * freq);
+    mOsc6.freq(getInternalParameterValue("freqUp1") * freq);
+    mOsc7.freq(getInternalParameterValue("freqUp2") * freq);
+    mOsc8.freq(getInternalParameterValue("freqUp3") * freq);
+    mOsc9.freq(getInternalParameterValue("freqUp4") * freq);
+    mPan.pos(getInternalParameterValue("pan"));
+    float ampStri = getInternalParameterValue("ampStri");
+    float ampUp = getInternalParameterValue("ampUp");
+    float ampLow = getInternalParameterValue("ampLow");
+    float amp = getInternalParameterValue("amp");
+    while (io()) {
+      float s1 = (mOsc1() + mOsc2() + mOsc3()) * mEnvStri() * ampStri;
+      s1 += (mOsc4() + mOsc5()) * mEnvLow() * ampLow;
+      s1 += (mOsc6() + mOsc7() + mOsc8() + mOsc9()) * mEnvUp() * ampUp;
+      s1 *= amp;
+      float s2;
+      mEnvFollow(s1);
+      mPan(s1, s1, s2);
+      io.out(0) += s1;
+      io.out(1) += s2;
+    }
+    // if(mEnvStri.done()) free();
+    if (mEnvStri.done() && mEnvUp.done() && mEnvLow.done() &&
+        (mEnvFollow.value() < 0.001))
+      free();
+  }
+
+  virtual void onProcess(Graphics &g) {
+    float frequency = getInternalParameterValue("frequency");
+    float amplitude = getInternalParameterValue("amplitude");
+    g.pushMatrix();
+    g.translate(amplitude, amplitude, -4);
+    // g.scale(frequency/2000, frequency/4000, 1);
+    float scaling = 0.1;
+    g.scale(scaling * frequency / 200, scaling * frequency / 400, scaling * 1);
+    g.color(mEnvFollow.value(), frequency / 1000, mEnvFollow.value() * 10, 0.4);
+    g.draw(mMesh);
+    g.popMatrix();
+  }
+
+  virtual void onTriggerOn() override {
+
+    mEnvStri.attack(getInternalParameterValue("attackStri"));
+    mEnvStri.decay(getInternalParameterValue("attackStri"));
+    mEnvStri.sustain(getInternalParameterValue("sustainStri"));
+    mEnvStri.release(getInternalParameterValue("releaseStri"));
+
+    mEnvLow.attack(getInternalParameterValue("attackLow"));
+    mEnvLow.decay(getInternalParameterValue("attackLow"));
+    mEnvLow.sustain(getInternalParameterValue("sustainLow"));
+    mEnvLow.release(getInternalParameterValue("releaseLow"));
+
+    mEnvUp.attack(getInternalParameterValue("attackUp"));
+    mEnvUp.decay(getInternalParameterValue("attackUp"));
+    mEnvUp.sustain(getInternalParameterValue("sustainUp"));
+    mEnvUp.release(getInternalParameterValue("releaseUp"));
+
+    mPan.pos(getInternalParameterValue("pan"));
+
+    mEnvStri.reset();
+    mEnvLow.reset();
+    mEnvUp.reset();
+  }
+
+  virtual void onTriggerOff() override {
+    //    std::cout << "trigger off" <<std::endl;
+    mEnvStri.triggerRelease();
+    mEnvLow.triggerRelease();
+    mEnvUp.triggerRelease();
+  }
 };
+
+// from christine's demo: https://github.com/allolib-s23/demo1-christinetu15/blob/main/tutorials/synthesis/demo-christine.cpp#L880
+class SquareWave : public SynthVoice
+{
+public:
+  // Unit generators
+  gam::Pan<> mPan;
+  gam::Sine<> mOsc1;
+  gam::Sine<> mOsc3;
+  gam::Sine<> mOsc5;
+
+  gam::Env<3> mAmpEnv;
+
+  // Initialize voice. This function will only be called once per voice when
+  // it is created. Voices will be reused if they are idle.
+  void init() override
+  {
+    // Intialize envelope
+    mAmpEnv.curve(0); // make segments lines
+    mAmpEnv.levels(0, 1, 1, 0);
+    mAmpEnv.sustainPoint(2); // Make point 2 sustain until a release is issued
+
+    createInternalTriggerParameter("amplitude", 0.8, 0.0, 1.0);
+    createInternalTriggerParameter("frequency", 440, 20, 5000);
+    createInternalTriggerParameter("attackTime", 0.1, 0.01, 3.0);
+    createInternalTriggerParameter("releaseTime", 0.1, 0.1, 10.0);
+    createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
+  }
+
+  // The audio processing function
+  void onProcess(AudioIOData &io) override
+  {
+    // Get the values from the parameters and apply them to the corresponding
+    // unit generators. You could place these lines in the onTrigger() function,
+    // but placing them here allows for realtime prototyping on a running
+    // voice, rather than having to trigger a new voice to hear the changes.
+    // Parameters will update values once per audio callback because they
+    // are outside the sample processing loop.
+    float f = getInternalParameterValue("frequency");
+    mOsc1.freq(f);
+    mOsc3.freq(f * 3);
+    mOsc5.freq(f * 5);
+
+    float a = getInternalParameterValue("amplitude");
+    mAmpEnv.lengths()[0] = getInternalParameterValue("attackTime");
+    mAmpEnv.lengths()[2] = getInternalParameterValue("releaseTime");
+    mPan.pos(getInternalParameterValue("pan"));
+    while (io())
+    {
+      float s1 = mAmpEnv() * (mOsc1() * a +
+                              mOsc3() * (a / 3.0) +
+                              mOsc5() * (a / 5.0));
+
+      float s2;
+      mPan(s1, s1, s2);
+      io.out(0) += s1;
+      io.out(1) += s2;
+    }
+    // We need to let the synth know that this voice is done
+    // by calling the free(). This takes the voice out of the
+    // rendering chain
+    if (mAmpEnv.done())
+      free();
+  }
+
+  // The triggering functions just need to tell the envelope to start or release
+  // The audio processing function checks when the envelope is done to remove
+  // the voice from the processing chain.
+  void onTriggerOn() override { mAmpEnv.reset(); }
+  void onTriggerOff() override { mAmpEnv.release(); }
+};
+
+//From Christine's demo again:
+// from audiovisual/09_pluck_visual.cpp
+class PluckedString : public SynthVoice
+{
+public:
+    float mAmp;
+    float mDur;
+    float mPanRise;
+    gam::Pan<> mPan;
+    gam::NoiseWhite<> noise;
+    gam::Decay<> env;
+    gam::MovingAvg<> fil{2};
+    gam::Delay<float, gam::ipl::Trunc> delay;
+    gam::ADSR<> mAmpEnv;
+    gam::EnvFollow<> mEnvFollow;
+    gam::Env<2> mPanEnv;
+    gam::STFT stft = gam::STFT(FFT_SIZE, FFT_SIZE / 4, 0, gam::HANN, gam::MAG_FREQ);
+    // This time, let's use spectrograms for each notes as the visual components.
+    Mesh mSpectrogram;
+    vector<float> spectrum;
+    double a = 0;
+    double b = 0;
+    double timepose = 10;
+    // Additional members
+    Mesh mMesh;
+
+    virtual void init() override
+    {
+        // Declare the size of the spectrum
+        spectrum.resize(FFT_SIZE / 2 + 1);
+        // mSpectrogram.primitive(Mesh::POINTS);
+        mSpectrogram.primitive(Mesh::LINE_STRIP);
+        mAmpEnv.levels(0, 1, 1, 0);
+        mPanEnv.curve(4);
+        env.decay(0.1);
+        delay.maxDelay(1. / 27.5);
+        delay.delay(1. / 440.0);
+
+        addDisc(mMesh, 1.0, 30);
+        createInternalTriggerParameter("amplitude", 0.1, 0.0, 1.0);
+        createInternalTriggerParameter("frequency", 60, 20, 5000);
+        createInternalTriggerParameter("attackTime", 0.001, 0.001, 1.0);
+        createInternalTriggerParameter("releaseTime", 3.0, 0.1, 10.0);
+        createInternalTriggerParameter("sustain", 0.7, 0.0, 1.0);
+        createInternalTriggerParameter("Pan1", 0.0, -1.0, 1.0);
+        createInternalTriggerParameter("Pan2", 0.0, -1.0, 1.0);
+        createInternalTriggerParameter("PanRise", 0.0, 0, 3.0); // range check
+    }
+
+    //    void reset(){ env.reset(); }
+
+    float operator()()
+    {
+        return (*this)(noise() * env());
+    }
+    float operator()(float in)
+    {
+        return delay(
+            fil(delay() + in));
+    }
+
+    virtual void onProcess(AudioIOData &io) override
+    {
+
+        while (io())
+        {
+            mPan.pos(mPanEnv());
+            float s1 = (*this)() * mAmpEnv() * mAmp;
+            float s2;
+            mEnvFollow(s1);
+            mPan(s1, s1, s2);
+            io.out(0) += s1;
+            io.out(1) += s2;
+            // STFT for each notes
+            if (stft(s1))
+            { // Loop through all the frequency bins
+                for (unsigned k = 0; k < stft.numBins(); ++k)
+                {
+                    // Here we simply scale the complex sample
+                    spectrum[k] = tanh(pow(stft.bin(k).real(), 1.3));
+                }
+            }
+        }
+        if (mAmpEnv.done() && (mEnvFollow.value() < 0.001))
+            free();
+    }
+
+    virtual void onProcess(Graphics &g) override
+    {
+        float frequency = getInternalParameterValue("frequency");
+        float amplitude = getInternalParameterValue("amplitude");
+        a += 0.29;
+        b += 0.23;
+        timepose -= 0.1;
+
+        mSpectrogram.reset();
+        // mSpectrogram.primitive(Mesh::LINE_STRIP);
+
+        for (int i = 0; i < FFT_SIZE / 2; i++)
+        {
+            mSpectrogram.color(HSV(spectrum[i] * 1000 + al::rnd::uniform()));
+            mSpectrogram.vertex(i, spectrum[i], 0.0);
+        }
+        g.meshColor(); // Use the color in the mesh
+        g.pushMatrix();
+        g.translate(0, 0, -10);
+        g.rotate(a, Vec3f(0, 1, 0));
+        g.rotate(b, Vec3f(1));
+        g.scale(10.0 / FFT_SIZE, 500, 1.0);
+        g.draw(mSpectrogram);
+        g.popMatrix();
+    }
+
+    virtual void onTriggerOn() override
+    {
+        mAmpEnv.reset();
+        timepose = 10;
+        updateFromParameters();
+        env.reset();
+        delay.zero();
+        mPanEnv.reset();
+    }
+
+    virtual void onTriggerOff() override
+    {
+        mAmpEnv.triggerRelease();
+    }
+
+    void updateFromParameters()
+    {
+        mPanEnv.levels(getInternalParameterValue("Pan1"),
+                       getInternalParameterValue("Pan2"),
+                       getInternalParameterValue("Pan1"));
+        mPanRise = getInternalParameterValue("PanRise");
+        delay.freq(getInternalParameterValue("frequency"));
+        mAmp = getInternalParameterValue("amplitude");
+        mAmpEnv.levels()[1] = 1.0;
+        mAmpEnv.levels()[2] = getInternalParameterValue("sustain");
+        mAmpEnv.lengths()[0] = getInternalParameterValue("attackTime");
+        mAmpEnv.lengths()[3] = getInternalParameterValue("releaseTime");
+        mPanEnv.lengths()[0] = mPanRise;
+        mPanEnv.lengths()[1] = mPanRise;
+    }
+};
+
 
 //From https://github.com/allolib-s21/notes-Mitchell57:
 class Kick : public SynthVoice {
@@ -404,9 +704,28 @@ public:
       synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
   }
 
+//From Christine's Demo:
+  void playAddSyn(float freq, float time, float duration, float amp = .8, float attack = 0.8, float decay = 0.01)
+  {
+    auto *voice = synthManager.synth().getVoice<SineEnv>();
+    // amp, freq, attack, release, pan
+    vector<VariantValue> params = vector<VariantValue>({amp, freq, attack, decay, 0.0});
+    voice->setTriggerParams(params);
+    synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
+  }
+
+  void playBass(float freq, float time, float duration, float amp = .9, float attack = 0.9, float decay = 0.001)
+  {
+    auto *voice = synthManager.synth().getVoice<SquareWave>();
+    // amp, freq, attack, release, pan
+    vector<VariantValue> params = vector<VariantValue>({amp, freq, attack, decay, 0.0});
+    voice->setTriggerParams(params);
+    synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
+  }
+
 //ADDED CODE:
-    //Functions, consts
-    const float bpm = 200;
+    //Helper functions, consts
+    const float bpm = 130;
     const float beat = 60 / bpm;
     const float measure = beat * 4;
 
@@ -431,6 +750,7 @@ public:
     playNote(freq[1], playTime + (2*arp), sus);
   }
 
+  //pieces of the original composition
   void drumPattern(int drumPattern, int sequenceStart){ //4 measures
     for(int i = 0; i < 4; i++){
       switch(drumPattern){
@@ -454,28 +774,15 @@ public:
   }
 
   //Instrument sequences
-  void bassChordProgression(float sequenceStart, int transpose){ //four measures total (4/4)
-    //assuming we start in C maj -> thirds on 1, 5, 3, 4
-    playThird(getFifthChordFreqs("C", 4, 0), 0 + sequenceStart, sixteenth, .2);
-    playThird(getFifthChordFreqs("C", 4, 0), beatsElapsed(1) + sequenceStart, eighth, .2);
-    playThird(getFifthChordFreqs("G", 4, 0), beatsElapsed(4) + sequenceStart, sixteenth, .2);
-    playThird(getFifthChordFreqs("G", 4, 0), beatsElapsed(5) + sequenceStart, eighth, .2);
-    playThird(getFifthChordFreqs("E", 4, 0), beatsElapsed(8) + sequenceStart, sixteenth, .2);
-    playThird(getFifthChordFreqs("E", 4, 0), beatsElapsed(9) + sequenceStart, eighth, .2);
-    playThird(getFifthChordFreqs("F", 4, 0), beatsElapsed(12) + sequenceStart, sixteenth, .2);
-    playThird(getFifthChordFreqs("F", 4, 0), beatsElapsed(13) + sequenceStart, eighth, .2);
+  void mainChordProgression(float sequenceStart, int transpose){ //four measures total (4/4)
+    playFifthChord(getFifthChordFreqs("E", 3, transpose, 2), sequenceStart, whole);
+    playFifthChord(getFifthChordFreqs("B", 3, transpose, 2), beatsElapsed(3)+ sequenceStart, whole);
+    playFifthChord(getFifthChordFreqs("A", 3, transpose, 2), beatsElapsed(3)+ sequenceStart, whole);
+    playFifthChord(getFifthChordFreqs("D", 3, transpose, 1), beatsElapsed(3)+ sequenceStart, whole);
   }
 
-
-  void melody(float sequenceStart, int transpose){
-    playNote(getFreq("C", 4, transpose), beatsElapsed(1) + sequenceStart, sixteenth, .2);
-    playNote(getFreq("D", 4, transpose), beatsElapsed(2) + sequenceStart, sixteenth, .2);
-    playNote(getFreq("E", 4, transpose), beatsElapsed(3) + sequenceStart, sixteenth, .25);
-    playNote(getFreq("F", 4, transpose), beatsElapsed(4) + sequenceStart, sixteenth, .25);
-    playNote(getFreq("G", 4, transpose), beatsElapsed(5) + sequenceStart, sixteenth, .3);
-    playNote(getFreq("A", 5, transpose), beatsElapsed(6) + sequenceStart, sixteenth, .3);
-    playNote(getFreq("B", 5, transpose), beatsElapsed(7) + sequenceStart, sixteenth, .35);
-    playNote(getFreq("C", 5, transpose), beatsElapsed(8)+ sequenceStart, sixteenth, .25);
+  void accompanyingChorProgression(float sequenceStart, int transpose){
+  
   }
 
   void playTune(){
