@@ -905,6 +905,7 @@ void endingMelody(float sequenceStart, int transpose){
 			  playHiHat(HiHatRNG, beatsElapsed(16));
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
 			  bassPattern(bassRNG, beatsElapsed(16), key);
+				
 	
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 			  playHiHat(HiHatRNG, beatsElapsed(32));
@@ -919,6 +920,10 @@ void endingMelody(float sequenceStart, int transpose){
 			  bassPattern(bassRNG,  beatsElapsed(48), key);
 			  mainChordProgression( beatsElapsed(48), key);
 			  accompanyingChordProgression(beatsElapsed(48), key);
+			kickPattern(beatsElapsed(48));
+				kickPattern(beatsElapsed(52));
+		kickPattern(beatsElapsed(56));
+		kickPattern(beatsElapsed(60));
 	
 	  //bridge
 	  playHiHat(3, beatsElapsed(4* 4 * 4)); //riser
