@@ -671,7 +671,7 @@ public:
 	
 void playHiHat(float time, float duration = 0.3)
   {
-      auto *voice = synthManager.synth().getVoice<Hihat>();
+      auto *voice = synthManager.synth().getVoice<HiHat>();
       // amp, freq, attack, release, pan
       synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
   }
@@ -716,7 +716,7 @@ void playHiHat(float time, float duration = 0.3)
     return (60 * be) / (bpm);
   }
 
-  void playFifthChord(vector<float> freq, float playTime, float sus, float arp){
+  void playFifthChord(vector<float> freq, float playTime, float sus){
     playNote(freq[0], playTime, sus);
     playNote(freq[1], playTime + .05, sus);
     playNote(freq[2], playTime + .1, sus);
@@ -757,7 +757,7 @@ void playHiHat(float time, float duration = 0.3)
 		      playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, half);
 		playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3) + sequenceStart, quarter); 
         case 3: //[X - - -]
-          playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, half));
+          playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, half);
 		 playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, half);
 		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, half);
 		 playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, half);
@@ -871,7 +871,7 @@ void endingMelody(float sequenceStart, int transpose){
 	  int HiHatRNG, bassRNG;
 	cout << "STEPS FROM A: " << key << endl;
 	  
-	  for(intro = lengthofIntro; intro > 0; intro--){ // intro is the number of 4 measure components we'll have of the song before the bridge to the chorus
+	  for(int intro = lengthofIntro; intro > 0; intro--){ // intro is the number of 4 measure components we'll have of the song before the bridge to the chorus
 		  kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
 			kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
 			 kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
