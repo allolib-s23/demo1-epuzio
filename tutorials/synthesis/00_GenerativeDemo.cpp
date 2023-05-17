@@ -351,6 +351,36 @@ public:
   void onTriggerOff() override { mAmpEnv.release(); }
 };
 
+class HiHat : public SynthVoice {
+ public:
+  // Unit generators
+  gam::Pan<> mPan;
+  gam::AD<> mAmpEnv; // Changed amp envelope from Env<3> to AD<>
+  
+  gam::Burst mBurst; // Resonant noise with exponential decay
+
+  void init() override {
+    // Initialize burst - Main freq, filter freq, duration
+    mBurst = gam::Burst(20000, 15000, 0.05);
+
+  }
+
+  // The audio processing function
+  void onProcess(AudioIOData& io) override {
+    while (io()) {
+      float s1 = mBurst();
+      float s2;
+      mPan(s1, s1, s2);
+      io.out(0) += s1;
+      io.out(1) += s2;
+    }
+    // Left this in because I'm not sure how to tell when a burst is done
+    if (mAmpEnv.done()) free();
+  }
+  void onTriggerOn() override { mBurst.reset(); }
+  //void onTriggerOff() override {  }
+};
+
 //From https://github.com/allolib-s21/notes-Mitchell57:
 class Kick : public SynthVoice {
  public:
@@ -811,7 +841,8 @@ void hiHatPattern(int sw, int sequenceStart){ //3 different variations
 		playHiHat(beatsElapsed(14.5) + sequenceStart);	
 		playHiHat(beatsElapsed(15.5) + sequenceStart);
 	case 0: 
-			//play nothing 
+		playHiHat(sequenceStart);
+			//play one? 
 	}
 }
 	
@@ -876,7 +907,7 @@ void endingMelody(float sequenceStart, int transpose){
 			kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
 			 kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
 		kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
-		  playHihat(HiHatRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
+		  playHiHat(HiHatRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
 		  
 		  if(intro == 4){ // hi hat and kick only
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
@@ -903,14 +934,14 @@ void endingMelody(float sequenceStart, int transpose){
 	  } //note to self: make this a switch please
 	
 	  //bridge
-	  playHihat(3, beatsElapsed(4 * intro)); //riser
+	  playHiHat(3, beatsElapsed(4 * intro)); //riser
 	  bassRNG = rand() % 4; //reroll bass pattern RNG
 	bassPattern(bassRNG, beatsElapsed(4 * lengthofIntro), transpose);
 	  transitionalChords(beatsElapsed(4 * lengthofIntro), transpose);
 	  
 	  //chorus (it's the same as case 4.... i'll make it poppier in future)
 	  HiHatRNG = rand() % 4; //reroll hi hat RNG 
-	   playHihat(HiHatRNG, beatsElapsed(4 * (lengthofIntro+1)));
+	   playHiHat(HiHatRNG, beatsElapsed(4 * (lengthofIntro+1)));
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
 			  bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+1), transpose);
 			  mainChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
