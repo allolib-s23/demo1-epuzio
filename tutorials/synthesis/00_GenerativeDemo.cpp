@@ -679,7 +679,7 @@ public:
   //From Professor Conrad's Frere Jacques Demo:
   void playNote(float freq, float time, float duration, float amp = .2, float attack = 0.01, float decay = 0.01)
   {
-    auto *voice = synthManager.synth().getVoice<SineEnv>();
+    auto *voice = synthManager.synth().getVoice<SquareWave>();
     // amp, freq, attack, release, pan
     vector<VariantValue> params = vector<VariantValue>({amp, freq, 0.1, 0.1, 0.0});
     voice->setTriggerParams(params);
@@ -760,22 +760,46 @@ void playHihat(float time, float duration = 0.3)
 //SONG COMPONENTS:
   //bassline:
   void bassPattern(int sw, int sequenceStart){ //4 measures
-    for(int i = 0; i < 4; i++){
       switch(sw){
         case 1: //[X X X X] (start .5 of a beat in)
           for(int j = 0; j < 4; j++){
-            playKick(200, beatsElapsed((i*4)+j) + sequenceStart + .5);
+            playBass(getFreq("C", 2, transpose), beatsElapsed(j) + sequenceStart + .5);
           }
+		for(int j = 4; j < 8; j++){
+            	playBass(getFreq("G", 2, transpose), beatsElapsed(4+j) + sequenceStart + .5);
+         	}
+		for(int j = 8; j < 12; j++){
+            	playBass(getFreq("E", 2, transpose), beatsElapsed(8+j) + sequenceStart + .5);
+         	}
+		for(int j = 12; j < 16; j++){
+            	playBass(getFreq("F", 2, transpose), beatsElapsed(12+j) + sequenceStart + .5);
+         	}
         case 2: // [X - - X]
-          playKick(200, beatsElapsed((i*4)) + sequenceStart);
-          playKick(200, beatsElapsed((i*4)+3) + sequenceStart);
+          playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, half);
+		playBass(getFreq("C", 2, transpose), beatsElapsed(3) + sequenceStart, quarter); 	 
+		      
+		playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, half);
+		playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3) + sequenceStart, quarter); 
+		      
+		      playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, half);
+		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3) + sequenceStart, quarter); 
+		      
+		      playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, half);
+		playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3) + sequenceStart, quarter); 
         case 3: //[X - - -]
-          playKick(200, (i*4) + sequenceStart); 	      
-	case 4: //[X - X -] (start on beat)
-          for(int j = 0; j < 4; j++){
-            if(j%2 != 0){playKick(200, beatsElapsed((i*4)+j) + sequenceStart);}
-          }
-      }
+          playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, half);
+		 playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, half);
+		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, half);
+		 playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, half);
+	case 4: //[X - X -] (start on beat, second one off by .5
+            playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, quarter
+		playBass(getFreq("C", 2, transpose), beatsElapsed(3) + sequenceStart + .5, quarter); 	   
+		      playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, quarter
+		playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3) + sequenceStart + .5, quarter); 
+		      playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, quarter
+		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3) + sequenceStart + .5, quarter); 
+		      playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, quarter
+		playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3) + sequenceStart + .5, quarter); 
     }
   }
 
@@ -786,6 +810,7 @@ void kickPattern(int sequenceStart){ //4 measures of the same kick drum pattern
 		playKick(200, beatsElapsed(1 + (i*4)) + sequenceStart);
 		playKick(200, beatsElapsed(2.5 + (i*4)) + sequenceStart);
 		playKick(200, beatsElapsed(3 + (i*4)) + sequenceStart);
+	}
 		
 }
 	
