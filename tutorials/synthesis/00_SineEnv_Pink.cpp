@@ -3,8 +3,22 @@
 //Song is in F major (one b flat)
 //Used Mitchell's code for a kick + snare (here): https://github.com/allolib-s21/notes-Mitchell57
 
-#include <cstdio> // for printing to stdout
 
+
+//playing sound
+// #include <SFML/Audio.hpp> //https://cplusplus.com/forum/beginner/227532/
+// #include <string.h>
+// #include <stdio.h>
+
+
+//doesn't work?
+//for mp3 files
+// #include <SDL2/SDL.h> //https://medium.com/@edkins.sarah/set-up-sdl2-on-your-mac-without-xcode-6b0c33b723f7
+// // #include "SDL2/SDL.h"
+// // #include "SDL2/SDL_mixer.h"
+// static const char *VOCALS = "PinkVocal.mp3";
+
+#include <cstdio> // for printing to stdout
 #include "Gamma/Analysis.h"
 #include "Gamma/Effects.h"
 #include "Gamma/Envelope.h"
@@ -101,6 +115,7 @@ class Snare : public SynthVoice {
     // reverb.resize(gam::FREEVERB);
 		// reverb.decay(0.5); // Set decay length, in seconds
 		// reverb.damping(0.2); // Set high-frequency damping factor in [0, 1]
+    createInternalTriggerParameter("amplitude", 0.3, 0.0, 1.0);
 
   }
 
@@ -118,7 +133,7 @@ class Snare : public SynthVoice {
       mOsc2.freqMul(decay);
 
       float amp = mAmpEnv();
-      float s1 = mBurst() + (mOsc() * amp * 0.1)+ (mOsc2() * amp * 0.05);
+      float s1 = (mBurst() + (mOsc() * amp * 0.1)+ (mOsc2() * amp * 0.05))* getInternalParameterValue("amplitude");
       // s1 += reverb(s1) * 0.2;
       float s2;
       mPan(s1, s1, s2);
@@ -224,6 +239,7 @@ public:
   void onTriggerOff() override { mAmpEnv.release(); }
 };
 
+
 // We make an app.
 class MyApp : public App {
 public:
@@ -237,17 +253,12 @@ public:
   // It's also a good place to put things that should
   // happen once at startup.
   void onCreate() override {
-    navControl().active(false); // Disable navigation via keyboard, since we
-                                // will be using keyboard for note triggering
-
-    // Set sampling rate for Gamma objects from app's audio
+    navControl().active(false); 
     gam::sampleRate(audioIO().framesPerSecond());
 
     imguiInit();
 
-    // Play example sequence. Comment this line to start from scratch
     playTune();
-    // synthManager.synthSequencer().playSequence("synth1.synthSequence");
     synthManager.synthRecorder().verbose(true);
   }
 
@@ -327,10 +338,12 @@ public:
       voice->setTriggerParams(params);
       synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
   }
-  void playSnare(float time, float duration = 0.3)
+  void playSnare(float time, float duration = 0.3, float amplitude = 0.1)
   {
       auto *voice = synthManager.synth().getVoice<Snare>();
       // amp, freq, attack, release, pan
+      vector<VariantValue> params = vector<VariantValue>(amplitude);
+      voice->setTriggerParams(params);
       synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
   }
 
@@ -431,7 +444,7 @@ public:
 
   //snare beat that keeps time
   void metronome(float sequenceStart, int bpm){
-    for(int i = 0; i < 8; i = i+1){ //this does not run 32 times.
+    for(int i = 0; i < 8; i = i+1){ 
       playSnare(((i*60)/(bpm)) + sequenceStart);
     }
   }
@@ -445,7 +458,15 @@ public:
     playKick(150, timeElapsed(bpm, 3.5) + sequenceStart);
   }
 
+  // bool playVocals(){ 
+  //   sf::Music music;
+  //   if (!music.openFromFile("PinkVocal.mp3"))
+  //       return -1; // error
+  //   music.play();
+  // }
+
   void playTune(){ //one measure of drums, then the tune!
+    // playVocals();
     int bpm = 60;
     //drums only - 1 measure
     metronome(0, bpm); //snare keeps time to music
@@ -471,7 +492,6 @@ public:
     kickBeat(16,bpm);
     kickBeat(20,bpm);
   }
-
 };
 
 int main() {
