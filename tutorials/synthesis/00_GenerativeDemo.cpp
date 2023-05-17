@@ -898,11 +898,11 @@ void endingMelody(float sequenceStart, int transpose){
 	cout << "STEPS FROM A: " << key << endl;
 	  
 	  for(int intro = 4; intro > 0; intro--){ // intro is the number of 4 measure components we'll have of the song before the bridge to the chorus
-		  kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
-		kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
-		kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
-		kickPattern(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
-		  playHiHat(HiHatRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))));
+		  kickPattern(beatsElapsed((4*intro) - (4*(4 - 4))));
+		kickPattern(beatsElapsed((4*intro) - (4*(4 - 4))));
+		kickPattern(beatsElapsed((4*intro) - (4*(4 - 4))));
+		kickPattern(beatsElapsed((4*intro) - (4*(4 - 4))));
+		  playHiHat(HiHatRNG, beatsElapsed((4*intro) - (4*(4 - 4))));
 		  
 		  if(intro == 4){ // hi hat and kick only
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
