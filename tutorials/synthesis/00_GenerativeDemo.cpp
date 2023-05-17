@@ -719,14 +719,10 @@ void playHiHat(float time, float duration = 0.3)
 //From Hunter's plucked string demo:
   void playBass(float freq, float time, float duration, float amp = .9, float attack = 0.9, float decay = 0.001)
   {
-    auto *voice = synthManager.synth().getVoice<PluckedString>();
-
-    voice->setInternalParameterValue("frequency", freq);
-    voice->setInternalParameterValue("amplitude", amp);
-    voice->setInternalParameterValue("attackTime", attack);
-    voice->setInternalParameterValue("sustain", sustain);
-    voice->setInternalParameterValue("releaseTime", release);
-    voice->setInternalParameterValue("pan", 0.0);
+    auto *voice = synthManager.synth().getVoice<SquareWave>();
+    // amp, freq, attack, release, pan
+    vector<VariantValue> params = vector<VariantValue>({amp, freq, attack, decay, 0.0});
+    voice->setTriggerParams(params);
     synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
   }
 
@@ -943,7 +939,7 @@ void endingMelody(float sequenceStart, int transpose){
 	  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 	   playHiHat(HiHatRNG, beatsElapsed(4 * (lengthofIntro+1)));
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+1), key);
+			  bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+1)), key);
 			  mainChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 			  accompanyingChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 				      
@@ -953,10 +949,10 @@ void endingMelody(float sequenceStart, int transpose){
 		kickPattern(beatsElapsed(4 * (lengthofIntro+1)));
 				      
 	//outro
-	  endingMelody(beatsElapsed(4 * (lengthofIntro+2), key);
+	  endingMelody(beatsElapsed(4 * (lengthofIntro+2)), key);
 	bassRNG = rand() % 4; //reroll bass pattern RNG
-	bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+2), key);
-	endingChords(beatsElapsed(4 * (lengthofIntro+2), key);
+	bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+2)), key);
+	endingChords(beatsElapsed(4 * (lengthofIntro+2)), key);
 			  
 	  
   }
