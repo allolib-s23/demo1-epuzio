@@ -915,19 +915,19 @@ void endingMelody(float sequenceStart, int transpose){
 		  if(intro == 3){ //hi hat kick and bass
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), transpose);
+			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), key);
 		  }
 		  if(intro == 2){ //hi hat, kick, chords, accompanyment, bass
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), transpose);
+			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), key);
 			  mainChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
 			  accompanyingChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
 		  }
 		  if(intro == 1){ //hi hat, kick, chords, accompanyment, bass
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), transpose);
+			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), key);
 			  mainChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
 			  accompanyingChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
 		  }
@@ -936,14 +936,14 @@ void endingMelody(float sequenceStart, int transpose){
 	  //bridge
 	  playHiHat(3, beatsElapsed(4 * intro)); //riser
 	  bassRNG = rand() % 4; //reroll bass pattern RNG
-	bassPattern(bassRNG, beatsElapsed(4 * lengthofIntro), transpose);
-	  transitionalChords(beatsElapsed(4 * lengthofIntro), transpose);
+	bassPattern(bassRNG, beatsElapsed(4 * lengthofIntro), key);
+	  transitionalChords(beatsElapsed(4 * lengthofIntro), key);
 	  
 	  //chorus (it's the same as case 4.... i'll make it poppier in future)
 	  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 	   playHiHat(HiHatRNG, beatsElapsed(4 * (lengthofIntro+1)));
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+1), transpose);
+			  bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+1), key);
 			  mainChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 			  accompanyingChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 				      
@@ -953,10 +953,10 @@ void endingMelody(float sequenceStart, int transpose){
 		kickPattern(beatsElapsed(4 * (lengthofIntro+1))));
 				      
 	//outro
-	  endingMelody(beatsElapsed(4 * (lengthofIntro+2)), transpose);
+	  endingMelody(beatsElapsed(4 * (lengthofIntro+2)), key);
 	bassRNG = rand() % 4; //reroll bass pattern RNG
-	bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+2), transpose);
-	endingChords(beatsElapsed(4 * (lengthofIntro+2)), transpose);
+	bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+2), key);
+	endingChords(beatsElapsed(4 * (lengthofIntro+2)), key);
 			  
 	  
   }
