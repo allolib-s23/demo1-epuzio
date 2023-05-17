@@ -879,43 +879,43 @@ void playHiHat(float time, float duration = 0.3)
       switch(sw){
         case 1: //[X X X X] (start .5 of a beat in)
           for(int j = 0; j < 4; j++){
-            playBass(getFreq("C", 2, transpose), beatsElapsed(j) + sequenceStart + .5));
+            playBass(getFreq("C", 2, transpose), beatsElapsed(j) + sequenceStart + .5, eighth);
           }
 		for(int j = 4; j < 8; j++){
-            	playBass(getFreq("G", 2, transpose), beatsElapsed(4+j) + sequenceStart + .5));
+            	playBass(getFreq("G", 2, transpose), beatsElapsed(4+j) + sequenceStart + .5, eighth);
          	}
 		for(int j = 8; j < 12; j++){
-            	playBass(getFreq("E", 2, transpose), beatsElapsed(8+j) + sequenceStart + .5));
+            	playBass(getFreq("E", 2, transpose), beatsElapsed(8+j) + sequenceStart + .5, eighth);
          	}
 		for(int j = 12; j < 16; j++){
-            	playBass(getFreq("F", 2, transpose), beatsElapsed(12+j) + sequenceStart + .5));
+            	playBass(getFreq("F", 2, transpose), beatsElapsed(12+j) + sequenceStart + .5, eighth);
          	}
         case 2: // [X - - X]
-          playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, half));
-		playBass(getFreq("C", 2, transpose), beatsElapsed(3) + sequenceStart, quarter)); 	 
+          playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, half);
+		playBass(getFreq("C", 2, transpose), beatsElapsed(3) + sequenceStart, quarter); 	 
 		      
-		playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, half));
-		playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3) + sequenceStart, quarter)); 
+		playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, half);
+		playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3) + sequenceStart, quarter); 
 		      
-		      playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, half));
-		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3) + sequenceStart, quarter)); 
+		      playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, half);
+		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3) + sequenceStart, quarter); 
 		      
-		      playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, half));
-		playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3) + sequenceStart, quarter)); 
+		      playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, half);
+		playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3) + sequenceStart, quarter); 
         case 3: //[X - - -]
           playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, half));
-		 playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, half));
-		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, half));
-		 playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, half));
+		 playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, half);
+		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, half);
+		 playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, half);
 	case 4: //[X - X -] (start on beat, second one off by .5
-            playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, quarter));
-		playBass(getFreq("C", 2, transpose), beatsElapsed(3) + sequenceStart + .5, quarter)); 	   
-		      playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, quarter));
-		playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3) + sequenceStart + .5, quarter)); 
-		      playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, quarter));
-		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3) + sequenceStart + .5, quarter)); 
-		      playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, quarter));
-		playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3) + sequenceStart + .5, quarter)); 
+            playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, quarter);
+		playBass(getFreq("C", 2, transpose), beatsElapsed(3) + sequenceStart + .5, quarter); 	   
+		      playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, quarter);
+		playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3) + sequenceStart + .5, quarter); 
+		      playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, quarter);
+		playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3) + sequenceStart + .5, quarter); 
+		      playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, quarter);
+		playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3) + sequenceStart + .5, quarter); 
     }
   }
 
