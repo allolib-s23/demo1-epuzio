@@ -751,29 +751,27 @@ public:
   }
 
   //pieces of the original composition
-  void drumPattern(int drumPattern, int sequenceStart){ //4 measures
+  void bassPattern(int sw, int sequenceStart){ //4 measures
     for(int i = 0; i < 4; i++){
-      switch(drumPattern){
-        case 1: //[X X X X]
+      switch(sw){
+        case 1: //[X X X X] (start .5 of a beat in)
           for(int j = 0; j < 4; j++){
-            playKick(200, beatsElapsed((i*4)+j) + sequenceStart);
+            playKick(200, beatsElapsed((i*4)+j) + sequenceStart + .5);
           }
-        case 2: //[X - X -]
+        case 2: // [X - - X]
+          playKick(200, beatsElapsed((i*4)) + sequenceStart);
+          playKick(200, beatsElapsed((i*4)+3) + sequenceStart);
+        case 3: //[X - - -]
+          playKick(200, (i*4) + sequenceStart); 	      
+	case 4: //[X - X -] (start on beat)
           for(int j = 0; j < 4; j++){
             if(j%2 != 0){playKick(200, beatsElapsed((i*4)+j) + sequenceStart);}
           }
-        case 3: // [X - - X]
-          playKick(200, beatsElapsed((i*4)) + sequenceStart);
-          playKick(200, beatsElapsed((i*4)+3) + sequenceStart);
-        case 4: //[X - - -]
-          playKick(200, sequenceStart);
-        case 5: //[- - - -]
-          
       }
     }
   }
 
-  //Instrument sequences
+  //Chord Progressions
   void mainChordProgression(float sequenceStart, int transpose){ //four measures total (4/4)
     playFifthChord(getFifthChordFreqs("E", 3, transpose, 2), sequenceStart, whole);
     playFifthChord(getFifthChordFreqs("B", 3, transpose, 2), beatsElapsed(3)+ sequenceStart, whole);
@@ -781,8 +779,18 @@ public:
     playFifthChord(getFifthChordFreqs("D", 3, transpose, 1), beatsElapsed(3)+ sequenceStart, whole);
   }
 
-  void accompanyingChorProgression(float sequenceStart, int transpose){
-  
+  void accompanyingChordProgression(float sequenceStart, int transpose){ //4 measures total
+  	playThird(getFifthChordFreqs("C", 3, transpose, 0), beatsElapsed(1.5) + sequenceStart, quarter);
+	playThird(getFifthChordFreqs("C", 3, transpose, 0), beatsElapsed(3) + sequenceStart, eighth);
+	
+	playThird(getFifthChordFreqs("G", 3, transpose, 0), beatsElapsed(4 + 1.5) + sequenceStart, quarter);
+	playThird(getFifthChordFreqs("G", 3, transpose, 0), beatsElapsed(4 + 3) + sequenceStart, eighth);
+	
+	playThird(getFifthChordFreqs("E", 3, transpose, 0), beatsElapsed(8 + 1.5) + sequenceStart, quarter);
+	playThird(getFifthChordFreqs("E", 3, transpose, 0), beatsElapsed(8 + 3) + sequenceStart, eighth);
+	  
+	playThird(getFifthChordFreqs("F", 3, transpose, 0), beatsElapsed(12 + 1.5) + sequenceStart, quarter);
+	playThird(getFifthChordFreqs("F", 3, transpose, 0), beatsElapsed(12 + 3) + sequenceStart, eighth);
   }
 
   void playTune(){
