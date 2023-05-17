@@ -899,22 +899,22 @@ void endingMelody(float sequenceStart, int transpose){
 	cout << "STEPS FROM A: " << key << endl;
 		
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
-			  playHiHat(HiHatRNG, beatsElapsed(0);
+			  playHiHat(HiHatRNG, beatsElapsed(0));
 	
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
-			  playHiHat(HiHatRNG, beatsElapsed(16);
+			  playHiHat(HiHatRNG, beatsElapsed(16));
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
 			  bassPattern(bassRNG, beatsElapsed(16), key);
 	
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
-			  playHiHat(HiHatRNG, beatsElapsed(32);
+			  playHiHat(HiHatRNG, beatsElapsed(32));
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
-			  bassPattern(bassRNG,  beatsElapsed(32), key);
-			  mainChordProgression(32), key);
-			  accompanyingChordProgression(32), key);
+			  bassPattern(bassRNG, beatsElapsed(32), key);
+			  mainChordProgression(beatsElapsed(32), key);
+			  accompanyingChordProgression(beatsElapsed(32), key);
 
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
-			  playHiHat(HiHatRNG, beatsElapsed(48);
+			  playHiHat(HiHatRNG, beatsElapsed(48));
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
 			  bassPattern(bassRNG,  beatsElapsed(48), key);
 			  mainChordProgression( beatsElapsed(48), key);
