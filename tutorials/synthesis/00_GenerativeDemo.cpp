@@ -734,42 +734,43 @@ public:
   }
 
   void onAnimate(double dt) override {
-    // The GUI is prepared here
-    imguiBeginFrame();
-    // Draw a window that contains the synth control panel
-    synthManager.drawSynthControlPanel();
-    imguiEndFrame();
+//     // The GUI is prepared here
+//     imguiBeginFrame();
+//     // Draw a window that contains the synth control panel
+//     synthManager.drawSynthControlPanel();
+//     imguiEndFrame();
   }
 
   // The graphics callback function.
-  void onDraw(Graphics &g) override {
-    g.clear();
-    // Render the synth's graphics
-    synthManager.render(g);
+//   void onDraw(Graphics &g) override {
+//     g.clear();
+//     // Render the synth's graphics
+//     synthManager.render(g);
 
-    // GUI is drawn here
-    imguiDraw();
+//     // GUI is drawn here
+//     imguiDraw();
   }
 
   // Whenever a key is pressed, this function is called
   bool onKeyDown(Keyboard const &k) override {
-    if (ParameterGUI::usingKeyboard()) { // Ignore keys if GUI is using
-                                         // keyboard
-      return true;
-    }
-    if (k.shift()) {
-      // If shift pressed then keyboard sets preset
-      int presetNumber = asciiToIndex(k.key());
-      synthManager.recallPreset(presetNumber);
-    } else {
-      // Otherwise trigger note for polyphonic synth
-      int midiNote = asciiToMIDI(k.key());
-      if (midiNote > 0) {
-        synthManager.voice()->setInternalParameterValue(
-            "frequency", ::pow(2.f, (midiNote - 69.f) / 12.f) * 432.f);
-        synthManager.triggerOn(midiNote);
-      }
-    }
+	 playTune();
+//     if (ParameterGUI::usingKeyboard()) { // Ignore keys if GUI is using
+//                                          // keyboard
+//       return true;
+//     }
+//     if (k.shift()) {
+//       // If shift pressed then keyboard sets preset
+//       int presetNumber = asciiToIndex(k.key());
+//       synthManager.recallPreset(presetNumber);
+//     } else {
+//       // Otherwise trigger note for polyphonic synth
+//       int midiNote = asciiToMIDI(k.key());
+//       if (midiNote > 0) {
+//         synthManager.voice()->setInternalParameterValue(
+//             "frequency", ::pow(2.f, (midiNote - 69.f) / 12.f) * 432.f);
+//         synthManager.triggerOn(midiNote);
+//       }
+//     }
     return true;
   }
 
