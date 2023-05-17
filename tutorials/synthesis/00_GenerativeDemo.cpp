@@ -921,15 +921,15 @@ void endingMelody(float sequenceStart, int transpose){
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
 			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), key);
-			  mainChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
-			  accompanyingChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
+			  mainChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), key);
+			  accompanyingChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), key);
 		  }
 		  if(intro == 1){ //hi hat, kick, chords, accompanyment, bass
 			  HiHatRNG = rand() % 4; //reroll hi hat RNG 
 			  bassRNG = rand() % 4; //reroll bass pattern RNG
 			  bassPattern(bassRNG, beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), key);
-			  mainChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
-			  accompanyingChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro)))), key);
+			  mainChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), key);
+			  accompanyingChordProgression(beatsElapsed((4*intro) - (4*(4 - lengthofIntro))), key);
 		  }
 	  } //note to self: make this a switch please
 	
@@ -947,16 +947,16 @@ void endingMelody(float sequenceStart, int transpose){
 			  mainChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 			  accompanyingChordProgression(beatsElapsed(4 * (lengthofIntro+1)), key);
 				      
-			kickPattern(beatsElapsed((4*(lengthofIntro+1))));
-			kickPattern(beatsElapsed(4 * (lengthofIntro+1))));
-			 kickPattern(beatsElapsed(4 * (lengthofIntro+1))));
-		kickPattern(beatsElapsed(4 * (lengthofIntro+1))));
+			kickPattern(beatsElapsed((4*(lengthofIntro+1)));
+			kickPattern(beatsElapsed(4 * (lengthofIntro+1)));
+			 kickPattern(beatsElapsed(4 * (lengthofIntro+1)));
+		kickPattern(beatsElapsed(4 * (lengthofIntro+1)));
 				      
 	//outro
-	  endingMelody(beatsElapsed(4 * (lengthofIntro+2)), key);
+	  endingMelody(beatsElapsed(4 * (lengthofIntro+2), key);
 	bassRNG = rand() % 4; //reroll bass pattern RNG
 	bassPattern(bassRNG, beatsElapsed(4 * (lengthofIntro+2), key);
-	endingChords(beatsElapsed(4 * (lengthofIntro+2)), key);
+	endingChords(beatsElapsed(4 * (lengthofIntro+2), key);
 			  
 	  
   }
