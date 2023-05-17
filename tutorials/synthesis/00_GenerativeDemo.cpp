@@ -703,6 +703,13 @@ public:
       voice->setTriggerParams(params);
       synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
   }
+	
+void playHihat(float time, float duration = 0.3)
+  {
+      auto *voice = synthManager.synth().getVoice<Hihat>();
+      // amp, freq, attack, release, pan
+      synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
+  }
 
 //From Christine's Demo:
   void playAddSyn(float freq, float time, float duration, float amp = .8, float attack = 0.8, float decay = 0.01)
@@ -749,8 +756,9 @@ public:
     playNote(freq[0], playTime, sus);
     playNote(freq[1], playTime + (2*arp), sus);
   }
-
-  //pieces of the original composition
+	
+//SONG COMPONENTS:
+  //bassline:
   void bassPattern(int sw, int sequenceStart){ //4 measures
     for(int i = 0; i < 4; i++){
       switch(sw){
@@ -771,12 +779,52 @@ public:
     }
   }
 
+//kick drum:
+void kickPattern(int sequenceStart){ //4 measures of the same kick drum pattern
+	for(int i = 0; i < 4; i++){
+		playKick(200, beatsElapsed(0 + (i*4)) + sequenceStart);
+		playKick(200, beatsElapsed(1 + (i*4)) + sequenceStart);
+		playKick(200, beatsElapsed(2.5 + (i*4)) + sequenceStart);
+		playKick(200, beatsElapsed(3 + (i*4)) + sequenceStart);
+		
+}
+	
+//hihat:
+void hiHats(int sw, int sequenceStart){ //3 different variations
+	switch(sw){
+	case 1:
+	    playHiHat(beatsElapsed(3) + sequenceStart);
+		playHiHat(beatsElapsed(7) + sequenceStart);
+		playHiHat(beatsElapsed(7.5) + sequenceStart);
+		playHiHat(beatsElapsed(12) + sequenceStart);
+		playHiHat(beatsElapsed(13.5) + sequenceStart);
+		playHiHat(beatsElapsed(14.5) + sequenceStart);
+	case 2: 
+		playHiHat(beatsElapsed(1.5) + sequenceStart);
+		playHiHat(beatsElapsed(2.5) + sequenceStart);
+		playHiHat(beatsElapsed(3.5) + sequenceStart);
+		playHiHat(beatsElapsed(12) + sequenceStart);
+		playHiHat(beatsElapsed(13.5) + sequenceStart);
+		playHiHat(beatsElapsed(14.5) + sequenceStart);	
+		playHiHat(beatsElapsed(15.5) + sequenceStart);	
+	case 3:      
+		playHiHat(beatsElapsed(4) + sequenceStart);
+		playHiHat(beatsElapsed(8) + sequenceStart);
+		playHiHat(beatsElapsed(10) + sequenceStart);
+		playHiHat(beatsElapsed(12.5) + sequenceStart);
+		playHiHat(beatsElapsed(13.5) + sequenceStart);
+		playHiHat(beatsElapsed(14.5) + sequenceStart);	
+		playHiHat(beatsElapsed(15.5) + sequenceStart);
+	case 4: 
+	}
+}
+	
   //Chord Progressions
   void mainChordProgression(float sequenceStart, int transpose){ //four measures total (4/4)
     playFifthChord(getFifthChordFreqs("E", 3, transpose, 2), sequenceStart, whole);
-    playFifthChord(getFifthChordFreqs("B", 3, transpose, 2), beatsElapsed(3)+ sequenceStart, whole);
-    playFifthChord(getFifthChordFreqs("A", 3, transpose, 2), beatsElapsed(3)+ sequenceStart, whole);
-    playFifthChord(getFifthChordFreqs("D", 3, transpose, 1), beatsElapsed(3)+ sequenceStart, whole);
+    playFifthChord(getFifthChordFreqs("B", 3, transpose, 2), beatsElapsed(4)+ sequenceStart, whole);
+    playFifthChord(getFifthChordFreqs("A", 3, transpose, 2), beatsElapsed(8)+ sequenceStart, whole);
+    playFifthChord(getFifthChordFreqs("D", 3, transpose, 1), beatsElapsed(12)+ sequenceStart, whole);
   }
 
   void accompanyingChordProgression(float sequenceStart, int transpose){ //4 measures total
@@ -793,6 +841,31 @@ public:
 	playThird(getFifthChordFreqs("F", 3, transpose, 0), beatsElapsed(12 + 3) + sequenceStart, eighth);
   }
 
+void transitionalChords(float sequenceStart, int transpose){
+	playThird(getFifthChordFreqs("E", 2, transpose, 0), beatsElapsed(12) + sequenceStart, half);
+	playThird(getFifthChordFreqs("F", 2, transpose, 2), beatsElapsed(14) + sequenceStart, half);
+}
+
+void endingChords(float sequenceStart, int transpose){
+	playFifthChord(getFifthChordFreqs("E", 3, transpose, 2), sequenceStart, whole);
+	
+	playNote(getFreq("C", 3, transpose), beatsElapsed(4) + sequenceStart, whole); //idk what chord this is but it's not a fifth
+	playNote(getFreq("D", 3, transpose), beatsElapsed(4) + sequenceStart, whole);
+	playNote(getFreq("G", 3, transpose), beatsElapsed(4) + sequenceStart, whole);
+	
+	playNote(getFreq("C", 3, transpose), beatsElapsed(8) + sequenceStart, whole * 2);
+}
+	
+
+//MELODIES:
+void endingMelody(float sequenceStart, int transpose){	
+	playNote(getFreq("C", 4, transpose), beatsElapsed(12) + sequenceStart, eighth);
+	playNote(getFreq("D", 4, transpose), beatsElapsed(12.5) + sequenceStart, eighth);
+	playNote(getFreq("E", 4, transpose), beatsElapsed(13) + sequenceStart, quarter);
+	playNote(getFreq("D", 4, transpose), beatsElapsed(14) + sequenceStart, eighth);
+	playNote(getFreq("D", 4, transpose), beatsElapsed(15) + sequenceStart, eighth);
+	playNote(getFreq("D", 4, transpose), beatsElapsed(15.5) + sequenceStart, whole);
+}
   void playTune(){
 
   }
