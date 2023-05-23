@@ -149,102 +149,75 @@ public:
     }
 };
 
-// from Christine's demo: https://github.com/allolib-s23/demo1-christinetu15/blob/main/tutorials/synthesis/demo-christine.cpp#L880
+//from https://github.com/allolib-s23/demo1-christinetu15/commit/be12f5e16f4d86acaf9e83267f1c59426d44538e?diff=unified#diff-5bc96b00c5884959857fb7e15d9c746d97d1dc1683e45b2430aeb15a1fab22a8
 class SquareWave : public SynthVoice
 {
 public:
-    // Unit generators
-    gam::Pan<> mPan;
-    gam::Sine<> mOsc1;
-    gam::Sine<> mOsc3;
-    gam::Sine<> mOsc5;
+  // Unit generators
+  gam::Pan<> mPan;
+  gam::Sine<> mOsc1;
+  gam::Sine<> mOsc3;
+  gam::Sine<> mOsc5;
 
-    gam::Env<3> mAmpEnv;
-    gam::EnvFollow<> mEnvFollow;
+  gam::Env<3> mAmpEnv;
 
-    // Initialize voice. This function will only be called once per voice when
-    // it is created. Voices will be reused if they are idle.
-    void init() override
+  // Initialize voice. This function will only be called once per voice when
+  // it is created. Voices will be reused if they are idle.
+  void init() override
+  {
+    // Intialize envelope
+    mAmpEnv.curve(0); // make segments lines
+    mAmpEnv.levels(0, 1, 1, 0);
+    mAmpEnv.sustainPoint(2); // Make point 2 sustain until a release is issued
+
+    createInternalTriggerParameter("amplitude", 0.8, 0.0, 1.0);
+    createInternalTriggerParameter("frequency", 440, 20, 5000);
+    createInternalTriggerParameter("attackTime", 0.1, 0.01, 3.0);
+    createInternalTriggerParameter("releaseTime", 0.1, 0.1, 10.0);
+    createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
+  }
+
+  // The audio processing function
+  void onProcess(AudioIOData &io) override
+  {
+    // Get the values from the parameters and apply them to the corresponding
+    // unit generators. You could place these lines in the onTrigger() function,
+    // but placing them here allows for realtime prototyping on a running
+    // voice, rather than having to trigger a new voice to hear the changes.
+    // Parameters will update values once per audio callback because they
+    // are outside the sample processing loop.
+    float f = getInternalParameterValue("frequency");
+    mOsc1.freq(f);
+    mOsc3.freq(f * 3);
+    mOsc5.freq(f * 5);
+
+    float a = getInternalParameterValue("amplitude");
+    mAmpEnv.lengths()[0] = getInternalParameterValue("attackTime");
+    mAmpEnv.lengths()[2] = getInternalParameterValue("releaseTime");
+    mPan.pos(getInternalParameterValue("pan"));
+    while (io())
     {
-        // Intialize envelope
-        mAmpEnv.curve(0); // make segments lines
-        mAmpEnv.levels(0, 1, 1, 0);
-        mAmpEnv.sustainPoint(2); // Make point 2 sustain until a release is issued
+      float s1 = mAmpEnv() * (mOsc1() * a +
+                              mOsc3() * (a / 3.0) +
+                              mOsc5() * (a / 5.0));
 
-        createInternalTriggerParameter("amplitude", 0.8, 0.0, 1.0);
-        createInternalTriggerParameter("frequency", 440, 20, 5000);
-        createInternalTriggerParameter("attackTime", 0.1, 0.01, 3.0);
-        createInternalTriggerParameter("releaseTime", 0.1, 0.1, 10.0);
-        createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
+      float s2;
+      mPan(s1, s1, s2);
+      io.out(0) += s1;
+      io.out(1) += s2;
     }
+    // We need to let the synth know that this voice is done
+    // by calling the free(). This takes the voice out of the
+    // rendering chain
+    if (mAmpEnv.done())
+      free();
+  }
 
-    // The audio processing function
-    void onProcess(AudioIOData &io) override
-    {
-        // Get the values from the parameters and apply them to the corresponding
-        // unit generators. You could place these lines in the onTrigger() function,
-        // but placing them here allows for realtime prototyping on a running
-        // voice, rather than having to trigger a new voice to hear the changes.
-        // Parameters will update values once per audio callback because they
-        // are outside the sample processing loop.
-        float f = getInternalParameterValue("frequency");
-        mOsc1.freq(f);
-        mOsc3.freq(f * 3);
-        mOsc5.freq(f * 5);
-
-        float a = getInternalParameterValue("amplitude");
-        mAmpEnv.lengths()[0] = getInternalParameterValue("attackTime");
-        mAmpEnv.lengths()[2] = getInternalParameterValue("releaseTime");
-        mPan.pos(getInternalParameterValue("pan"));
-        while (io())
-        {
-            float s1 = mAmpEnv() * (mOsc1() * a +
-                                    mOsc3() * (a / 3.0) +
-                                    mOsc5() * (a / 5.0));
-
-            float s2;
-            mPan(s1, s1, s2);
-            io.out(0) += s1;
-            io.out(1) += s2;
-        }
-        // We need to let the synth know that this voice is done
-        // by calling the free(). This takes the voice out of the
-        // rendering chain
-        if (mAmpEnv.done())
-            free();
-    }
-    //   // The graphics processing function
-    //   void onProcess(Graphics &g) override {
-    //     float frequency = getInternalParameterValue("frequency");
-    //     float amplitude = getInternalParameterValue("amplitude");
-
-    //     g.pushMatrix();
-    //     g.translate(sin(static_cast<double>(frequency)), cos(static_cast<double>(frequency)), -8);
-    //     g.scale(frequency / 5000, frequency / 5000, frequency / 5000);
-    //     g.color(frequency / 1000, frequency / 1000, 10, 0.4);
-    //     g.draw(mMesh);
-    //     g.popMatrix();
-
-    //     g.pushMatrix();
-    //     g.translate(sin(static_cast<double>(frequency)), cos(static_cast<double>(frequency)), -12);
-    //     g.scale(frequency / 5000, 2 * frequency / 5000, frequency / 5000);
-    //     g.color(frequency / 1000, 10, 10, 0.4);
-    //     g.draw(mMesh);
-    //     g.popMatrix();
-
-    //     g.pushMatrix();
-    //     g.translate(cos(static_cast<double>(frequency)), sin(static_cast<double>(frequency)), -14);
-    //     g.scale(frequency / 5000, 3 * frequency / 5000, frequency / 5000);
-    //     g.color(frequency / 1000, 10, frequency / 10, 0.4);
-    //     g.draw(mMesh);
-    //     g.popMatrix();
-    //   }
-
-    // The triggering functions just need to tell the envelope to start or release
-    // The audio processing function checks when the envelope is done to remove
-    // the voice from the processing chain.
-    void onTriggerOn() override { mAmpEnv.reset(); }
-    void onTriggerOff() override { mAmpEnv.release(); }
+  // The triggering functions just need to tell the envelope to start or release
+  // The audio processing function checks when the envelope is done to remove
+  // the voice from the processing chain.
+  void onTriggerOn() override { mAmpEnv.reset(); }
+  void onTriggerOff() override { mAmpEnv.release(); }
 };
 
 // From https://github.com/allolib-s21/notes-Mitchell57:
@@ -345,7 +318,6 @@ public:
 };
 
 // From https://github.com/allolib-s21/notes-Mitchell57:
-// commented out reverbs bc I think they're in his "theory" class
 class Snare : public SynthVoice
 {
 public:
@@ -521,7 +493,7 @@ public:
         gam::sampleRate(audioIO().framesPerSecond()); // Set sampling rate for Gamma objects from app's audio
 
         imguiInit();
-        playTune();
+        
         synthManager.synthRecorder().verbose(true);
     }
 
@@ -549,6 +521,8 @@ public:
     // Whenever a key is pressed, this function is called
     bool onKeyDown(Keyboard const &k) override
     {
+        playTune();
+
         // // don't do anything for this demo
 
         // if (ParameterGUI::usingKeyboard())
@@ -636,7 +610,6 @@ public:
         voice->setInternalParameterValue("amplitude", amp);
         synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
     }
-
     // HELPER FUNCTIONS, CONSTS:
     float bpm = 130;
     const float beat = 60 / bpm;
@@ -655,38 +628,38 @@ public:
 
     void playChord(vector<float> freq, float playTime, float sus)
     {
-        // given vector of frequencies, play all frequencies at the same time
         for (int i = 0; i < freq.size(); i++)
         {
-            playNote(freq[i], playTime, sus, .1 / freq.size());
+            playNote(freq[i], playTime, sus, (.2 / freq.size()));
         }
     }
+    
 
     // SONG COMPONENTS:
     // bassline:
-    void bassPattern(int sw, int sequenceStart, int transpose)
+    void bassPattern(int sw, int sequenceStart, int transpose) //sequence start refers to beats btw
     { // 4 measures of 4 beats, 4 different bassline variations
-        cout << "bass playing case " << sw << endl;
+        cout << "bass playing case " << sw << " at time " << beatsElapsed(sequenceStart) << " transposed by " << transpose << endl;
         switch (sw)
         {
         case 0: //[X X X X]
 
             for (int j = 0; j < 4; j++)
             {
-                playBass(getFreq("C", 2, transpose), beatsElapsed(j) + sequenceStart, eighth);
+                playBass(getFreq("C", 2, transpose), beatsElapsed(j + sequenceStart), eighth);
             }
             for (int j = 4; j < 8; j++)
             {
-                playBass(getFreq("G", 2, transpose), beatsElapsed(4 + j) + sequenceStart, eighth);
+                playBass(getFreq("G", 2, transpose), beatsElapsed(4 + j + sequenceStart), eighth);
             }
             cout << "CASE 1" << endl;
             for (int j = 8; j < 12; j++)
             {
-                playBass(getFreq("E", 2, transpose), beatsElapsed(8 + j) + sequenceStart, eighth);
+                playBass(getFreq("E", 2, transpose), beatsElapsed(8 + j + sequenceStart), eighth);
             }
             for (int j = 12; j < 16; j++)
             {
-                playBass(getFreq("F", 2, transpose), beatsElapsed(12 + j) + sequenceStart, eighth);
+                playBass(getFreq("F", 2, transpose), beatsElapsed(12 + j + sequenceStart), eighth);
             }
             break;
         case 1: // [X->X - X]
@@ -706,21 +679,21 @@ public:
             break;
         case 2: //[X->X - -]
             cout << "CASE 3" << endl;
-            playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, half);
-            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, half);
-            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, half);
-            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, half);
+            playBass(getFreq("C", 2, transpose), beatsElapsed(0 + sequenceStart), half);
+            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0 + sequenceStart), half);
+            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0 + sequenceStart), half);
+            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0 + sequenceStart), half);
             break;
         case 3: //[X - X -]
             cout << "CASE 4" << endl;
-            playBass(getFreq("C", 2, transpose), beatsElapsed(0) + sequenceStart, quarter);
-            playBass(getFreq("C", 2, transpose), beatsElapsed(3) + sequenceStart, quarter);
-            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0) + sequenceStart, quarter);
-            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3) + sequenceStart, quarter);
-            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0) + sequenceStart, quarter);
-            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3) + sequenceStart, quarter);
-            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0) + sequenceStart, quarter);
-            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3) + sequenceStart, quarter);
+            playBass(getFreq("C", 2, transpose), beatsElapsed(0 + sequenceStart), quarter);
+            playBass(getFreq("C", 2, transpose), beatsElapsed(3 + sequenceStart), quarter);
+            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0 + sequenceStart), quarter);
+            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3 + sequenceStart), quarter);
+            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0 + sequenceStart), quarter);
+            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3 + sequenceStart), quarter);
+            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0 + sequenceStart), quarter);
+            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3 + sequenceStart), quarter);
             break;
         }
     }
@@ -730,6 +703,7 @@ public:
     { // 4 measures of the same syncopated kick drum pattern
         for (int i = 0; i < 4; i++)
         {
+            cout << "Play Kick: " << beatsElapsed(0 + (i * 4) + sequenceStart) << endl;
             playKick(200, beatsElapsed(0 + (i * 4) + sequenceStart));
             playKick(200, beatsElapsed(1 + (i * 4) + sequenceStart));
             playKick(200, beatsElapsed(2.5 + (i * 4) + sequenceStart));
@@ -740,7 +714,7 @@ public:
     // hihat:
     void hiHatPattern(int sw, int sequenceStart)
     { // 3 different variations, 4 measures of 4 beats
-        cout << "hi hat playing case " << sw << endl;
+        cout << "hi hat playing case " << sw << " at time " << beatsElapsed(sequenceStart) << " " << endl;
         switch (sw)
         {
         case 0:
@@ -752,115 +726,184 @@ public:
             playHiHat(beatsElapsed(14.5 + sequenceStart));
             break;
         case 1:
-            playHiHat(beatsElapsed(1.5) + sequenceStart);
-            playHiHat(beatsElapsed(2.5) + sequenceStart);
-            playHiHat(beatsElapsed(3.5) + sequenceStart);
-            playHiHat(beatsElapsed(12) + sequenceStart);
-            playHiHat(beatsElapsed(13.5) + sequenceStart);
-            playHiHat(beatsElapsed(14.5) + sequenceStart);
-            playHiHat(beatsElapsed(15.5) + sequenceStart);
+            playHiHat(beatsElapsed(1.5 + sequenceStart));
+            playHiHat(beatsElapsed(2.5 + sequenceStart));
+            playHiHat(beatsElapsed(3.5 + sequenceStart));
+            playHiHat(beatsElapsed(12 + sequenceStart));
+            playHiHat(beatsElapsed(13.5 + sequenceStart));
+            playHiHat(beatsElapsed(14.5 + sequenceStart));
+            playHiHat(beatsElapsed(15.5 + sequenceStart));
             break;
         case 2:
-            playHiHat(beatsElapsed(4) + sequenceStart);
-            playHiHat(beatsElapsed(8) + sequenceStart);
-            playHiHat(beatsElapsed(10) + sequenceStart);
-            playHiHat(beatsElapsed(12.5) + sequenceStart);
-            playHiHat(beatsElapsed(13.5) + sequenceStart);
-            playHiHat(beatsElapsed(14.5) + sequenceStart);
-            playHiHat(beatsElapsed(15.5) + sequenceStart);
+            playHiHat(beatsElapsed(4 + sequenceStart));
+            playHiHat(beatsElapsed(8 + sequenceStart));
+            playHiHat(beatsElapsed(10 + sequenceStart));
+            playHiHat(beatsElapsed(12.5 + sequenceStart));
+            playHiHat(beatsElapsed(13.5 + sequenceStart));
+            playHiHat(beatsElapsed(14.5 + sequenceStart));
+            playHiHat(beatsElapsed(15.5 + sequenceStart));
             break;
         }
     }
 
+    //riser snare (inspired by Christine's Krewella demo!):
+    void riserPattern(int sequenceStart) {
+        for(int i = 0; i < 4; i++){
+            playSnare(beatsElapsed(sequenceStart+(i*4)));
+        }
+        for(int i = 0; i < 8; i++){
+            playSnare(beatsElapsed(16+sequenceStart+(i*2)));
+        }
+        for(int i = 0; i < 16; i++){
+            playSnare(beatsElapsed(24+sequenceStart+(i)));
+        }
+  }
+
     // Chord Progressions
     void mainChordProgression(float sequenceStart, int transpose)
     { // four measures total (4/4)
+        cout << "chords playing octave " << transpose << " at time " << beatsElapsed(sequenceStart) << " " << endl;
         playChord(getFifthChordFreqs("E", 3, transpose, 2), sequenceStart, whole);
-        playChord(getFifthChordFreqs("B", 3, transpose, 2), beatsElapsed(4) + sequenceStart, whole);
-        playChord(getFifthChordFreqs("A", 3, transpose, 2), beatsElapsed(8) + sequenceStart, whole);
-        playChord(getFifthChordFreqs("D", 3, transpose, 1), beatsElapsed(12) + sequenceStart, whole);
+        playChord(getFifthChordFreqs("B", 3, transpose, 2), beatsElapsed(4 + sequenceStart), whole);
+        playChord(getFifthChordFreqs("A", 3, transpose, 2), beatsElapsed(8 + sequenceStart), whole);
+        playChord(getFifthChordFreqs("D", 3, transpose, 1), beatsElapsed(12 + sequenceStart), whole);
     }
 
     void accompanyingChordProgression(float sequenceStart, int transpose)
     { // 4 measures total
-        playChord(getFifthChordFreqs("C", 3, transpose, 0), beatsElapsed(1.5) + sequenceStart, quarter);
-        playChord(getFifthChordFreqs("C", 3, transpose, 0), beatsElapsed(3) + sequenceStart, eighth);
+        cout << "chord accom playing octave " << transpose << " at time " << beatsElapsed(sequenceStart) << " " << endl;
+        playChord(getFifthChordFreqs("C", 3, transpose, 0), beatsElapsed(1.5 + sequenceStart), quarter);
+        playChord(getFifthChordFreqs("C", 3, transpose, 0), beatsElapsed(3 + sequenceStart), eighth);
 
         playChord(getFifthChordFreqs("G", 3, transpose, 0), beatsElapsed(4 + 1.5 + sequenceStart), quarter);
         playChord(getFifthChordFreqs("G", 3, transpose, 0), beatsElapsed(4 + 3 + sequenceStart), eighth);
 
         playChord(getFifthChordFreqs("E", 3, transpose, 0), beatsElapsed(8 + 1.5 + sequenceStart), quarter);
-        playChord(getFifthChordFreqs("E", 3, transpose, 0), beatsElapsed(8 + 3) + sequenceStart, eighth);
+        playChord(getFifthChordFreqs("E", 3, transpose, 0), beatsElapsed(8 + 3 + sequenceStart), eighth);
 
-        playChord(getFifthChordFreqs("F", 3, transpose, 0), beatsElapsed(12 + 1.5) + sequenceStart, quarter);
-        playChord(getFifthChordFreqs("F", 3, transpose, 0), beatsElapsed(12 + 3) + sequenceStart, eighth);
+        playChord(getFifthChordFreqs("F", 3, transpose, 0), beatsElapsed(12 + 1.5 + sequenceStart), quarter);
+        playChord(getFifthChordFreqs("F", 3, transpose, 0), beatsElapsed(12 + 3 + sequenceStart), eighth);
+    }
+
+    void arpChordProgression(float sequenceStart, int transpose) //similar to Bloodeater by Mom
+    { // 4 measures total
+        cout << "arp chord playing octave " << transpose << " at time " << beatsElapsed(sequenceStart) << " " << endl;
+        playNote(getFreq("C", 4, transpose), beatsElapsed(0 + sequenceStart), sixteenth);
+        playNote(getFreq("E", 4, transpose), beatsElapsed(0.5 + sequenceStart), sixteenth);
+        playNote(getFreq("G", 4, transpose), beatsElapsed(1 + sequenceStart), sixteenth);
+        playNote(getFreq("C", 5, transpose), beatsElapsed(1.5 + sequenceStart), sixteenth);
+        playNote(getFreq("C", 4, transpose), beatsElapsed(3 + sequenceStart), sixteenth);
+
+        playNote(getFreq("G", 4, transpose), beatsElapsed(4 + 0 + sequenceStart), sixteenth);
+        playNote(getFreq("B", 4, transpose), beatsElapsed(4 + 0.5 + sequenceStart), sixteenth);
+        playNote(getFreq("D", 5, transpose), beatsElapsed(4 + 1 + sequenceStart), sixteenth);
+        playNote(getFreq("G", 5, transpose), beatsElapsed(4 + 1.5 + sequenceStart), sixteenth);
+        playNote(getFreq("G", 4, transpose), beatsElapsed(4 + 3 + sequenceStart), sixteenth);
+
+        playNote(getFreq("E", 4, transpose), beatsElapsed(8 + 0 + sequenceStart), sixteenth);
+        playNote(getFreq("A", 4, transpose), beatsElapsed(8 + 0.5 + sequenceStart), sixteenth);
+        playNote(getFreq("C", 5, transpose), beatsElapsed(8 + 1 + sequenceStart), sixteenth);
+        playNote(getFreq("E", 5, transpose), beatsElapsed(8 + 1.5 + sequenceStart), sixteenth);
+        playNote(getFreq("E", 4, transpose), beatsElapsed(8 + 3 + sequenceStart), sixteenth);
+
+        playNote(getFreq("F", 4, transpose), beatsElapsed(12 + 0 + sequenceStart), sixteenth);
+        playNote(getFreq("A", 4, transpose), beatsElapsed(12 + 0.5 + sequenceStart), sixteenth);
+        playNote(getFreq("C", 5, transpose), beatsElapsed(12 + 1 + sequenceStart), sixteenth);
+        playNote(getFreq("F", 5, transpose), beatsElapsed(12 + 1.5 + sequenceStart), sixteenth);
+        playNote(getFreq("F", 4, transpose), beatsElapsed(12 + 3 + sequenceStart), sixteenth);
     }
 
     void transitionalChords(float sequenceStart, int transpose)
     {
-        playChord(getFifthChordFreqs("E", 2, transpose, 0), beatsElapsed(12) + sequenceStart, half);
-        playChord(getFifthChordFreqs("F", 2, transpose, 2), beatsElapsed(14) + sequenceStart, half);
+        playChord(getFifthChordFreqs("E", 2, transpose, 0), beatsElapsed(12 + sequenceStart), half);
+        playChord(getFifthChordFreqs("F", 2, transpose, 2), beatsElapsed(14 + sequenceStart), half);
     }
 
     void endingChords(float sequenceStart, int transpose)
     {
-        playChord(getFifthChordFreqs("E", 3, transpose, 2), sequenceStart, whole);
+        playChord(getFifthChordFreqs("E", 3, transpose, 2), beatsElapsed(sequenceStart), whole);
 
-        playNote(getFreq("C", 3, transpose), beatsElapsed(4) + sequenceStart, whole); // idk what chord this is but it's not a fifth
-        playNote(getFreq("D", 3, transpose), beatsElapsed(4) + sequenceStart, whole);
-        playNote(getFreq("G", 3, transpose), beatsElapsed(4) + sequenceStart, whole);
+        playNote(getFreq("C", 3, transpose), beatsElapsed(4 + sequenceStart), whole); // idk what chord this is but it's not a fifth
+        playNote(getFreq("D", 3, transpose), beatsElapsed(4 + sequenceStart), whole);
+        playNote(getFreq("G", 3, transpose), beatsElapsed(4 + sequenceStart), whole);
 
-        playNote(getFreq("C", 3, transpose), beatsElapsed(8) + sequenceStart, whole * 2);
+        playNote(getFreq("C", 3, transpose), beatsElapsed(8 + sequenceStart), whole * 2);
     }
 
     // MELODIES:
     void endingMelody(float sequenceStart, int transpose)
     {
-        playNote(getFreq("C", 4, transpose), beatsElapsed(12) + sequenceStart, eighth);
-        playNote(getFreq("D", 4, transpose), beatsElapsed(12.5) + sequenceStart, eighth);
-        playNote(getFreq("E", 4, transpose), beatsElapsed(13) + sequenceStart, quarter);
-        playNote(getFreq("D", 4, transpose), beatsElapsed(14) + sequenceStart, eighth);
-        playNote(getFreq("D", 4, transpose), beatsElapsed(15) + sequenceStart, eighth);
-        playNote(getFreq("D", 4, transpose), beatsElapsed(15.5) + sequenceStart, whole);
+        playNote(getFreq("C", 4, transpose), beatsElapsed(12 + sequenceStart), eighth);
+        playNote(getFreq("D", 4, transpose), beatsElapsed(12.5 + sequenceStart), eighth);
+        playNote(getFreq("E", 4, transpose), beatsElapsed(13 + sequenceStart), quarter);
+        playNote(getFreq("D", 4, transpose), beatsElapsed(14 + sequenceStart), eighth);
+        playNote(getFreq("D", 4, transpose), beatsElapsed(15 + sequenceStart), eighth);
+        playNote(getFreq("D", 4, transpose), beatsElapsed(15.5 + sequenceStart), whole);
     }
 
     // SONG:
     void playTune()
     {
+
         //PREP:
         srand((unsigned)time(NULL)); // seed the random number
         int key = rand() % 12;       // Number of steps we'll transpose the composition upwards
-        int introLength = 3; //Length of intro - 1, 2, or 3 phrases long
-        int hiHatRNG, bassRNG; //Generate a new hi hat or bass pattern every phrase
+        int introLength = 1; //Length of intro - 1, 2, or 3 phrases long
+        int bridgeLength = 2; //Length of bridge - 1 or 2 phrases long
+        int hiHatRNG = rand() % 2; // set initial hi hat pattern
+        int bassRNG = rand() % 3; // set initial bass battern
         cout << "intro length: " << introLength << endl;
         
-        //PHRASE 1: DRUMS ONLY
+        //PHRASE 1 (INTRO 1): DRUMS ONLY
         if(introLength == 3){
+            hiHatRNG = rand() % 2; // change hi hat pattern
             kickPattern(0);
+            arpChordProgression(0*16, key);
         }
 
-        //PHRASE 2: DRUMS + BASSLINE + HIHAT
+        //PHRASE 2 (INTRO 2): DRUMS + BASSLINE + HIHAT
         if(introLength == 2 || introLength == 3){
-            kickPattern((3-introLength)*16);
-            hiHatRNG = rand() % 3; // reroll hi hat pattern
-            bassRNG = rand() % 2; // reroll bass pattern
-
-            cout << "bass rng : " << bassRNG << endl;
-            cout << "hihat rng : " << hiHatRNG << endl;
-            playHiHat(hiHatRNG, beatsElapsed(((3-introLength)*16)));
-            bassPattern(bassRNG, beatsElapsed(((3-introLength)*16)), key);
+            cout << "START PHRASE 2: " << beatsElapsed((introLength-2) * 16.0) << endl;
+            kickPattern((introLength-2)*16);
+            hiHatRNG = rand() % 2; // change hi hat pattern
+            hiHatPattern(hiHatRNG, (introLength-2) * 16);
+            bassPattern(bassRNG, (introLength-2) * 16, key);
         }
 
-        //PHRASE 3: DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT
-        kickPattern((3-introLength)*16);
-        hiHatRNG = rand() % 3; // reroll hi hat pattern
-        bassRNG = rand() % 2; // reroll bass pattern
-        cout << "bass rng 2: " << bassRNG << endl;
-        cout << "hihat rng 2: " << hiHatRNG << endl;
-        playHiHat(hiHatRNG, beatsElapsed(((3-introLength)*16)));
-        bassPattern(bassRNG, beatsElapsed(((3-introLength)*16)), key);
-        mainChordProgression(beatsElapsed(((3-introLength)*16)), key);
-        accompanyingChordProgression(beatsElapsed(((3-introLength)*16)), key);
+        //PHRASE 3 (INTRO 3): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
+        cout << "START PHRASE 3: " << beatsElapsed((introLength-1) * 16.0) << endl;
+        kickPattern((introLength-1)*16);
+        hiHatRNG = rand() % 2; // change hi hat pattern
+        hiHatPattern(hiHatRNG, (introLength-1)*16);
+        bassPattern(bassRNG, (introLength-1)*16, key);
+        mainChordProgression((introLength-1)*16, key);
+        accompanyingChordProgression((introLength-1)*16, key);
+        riserPattern((introLength-1)*16);
+        
+
+        //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT 
+        cout << "START PHRASE 4: " << beatsElapsed((introLength) * 16.0) << endl;
+        kickPattern((introLength-1)*16);
+        hiHatRNG = rand() % 2; // change hi hat pattern
+        bassRNG = rand() % 3; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength)*16);
+        bassPattern(bassRNG, (introLength)*16, key);
+        mainChordProgression((introLength)*16, key);
+        accompanyingChordProgression((introLength)*16, key);
+        bassRNG = rand() % 3; // change bass pattern for bridge
+
+
+        //PHRASE 5 (BRIDGE 1): BASSLINE + DRUMS ONLY
+        if(bridgeLength == 2){
+            cout << "START PHRASE 5: " << beatsElapsed((introLength+bridgeLength-1) * 16.0) << endl;
+            bassPattern(bassRNG, (introLength+1)*16, key);
+        }
+
+        //PHRASE 6: HI HAT + DRUMS + TRANSITIONAL CHORDS
+        cout << "START PHRASE 6: " << beatsElapsed((introLength+bridgeLength) * 16.0) << endl;
+        bassPattern(bassRNG, (introLength+1)*16, key);
+        arpChordProgression((introLength+1)*16, key); //beeps and boops
+        transitionalChords((introLength+1)*16, key);
     }
 };
 
