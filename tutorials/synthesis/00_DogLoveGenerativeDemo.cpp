@@ -626,11 +626,11 @@ public:
         return (60 * be) / (bpm);
     }
 
-    void playChord(vector<float> freq, float playTime, float sus)
+    void playChord(vector<float> freq, int numNotes, float playTime, float sus)
     {
-        for (int i = 0; i < freq.size(); i++)
+        for (int i = 0; i < numNotes; i++)
         {
-            playNote(freq[i], playTime, sus, (.2 / freq.size()));
+            playNote(freq[i], playTime, sus, (.2 / numNotes));
         }
     }
     
@@ -763,26 +763,26 @@ public:
     void mainChordProgression(float sequenceStart, int transpose)
     { // four measures total (4/4)
         cout << "chords playing octave " << transpose << " at time " << beatsElapsed(sequenceStart) << " " << endl;
-        playChord(getFifthChordFreqs("E", 3, transpose, 2), sequenceStart, whole);
-        playChord(getFifthChordFreqs("B", 3, transpose, 2), beatsElapsed(4 + sequenceStart), whole);
-        playChord(getFifthChordFreqs("A", 3, transpose, 2), beatsElapsed(8 + sequenceStart), whole);
-        playChord(getFifthChordFreqs("D", 3, transpose, 1), beatsElapsed(12 + sequenceStart), whole);
+        playChord(getFifthChordFreqs("C", 3, transpose, 2), 3, sequenceStart, whole);
+        playChord(getFifthChordFreqs("G", 3, transpose, 2), 3, beatsElapsed(4 + sequenceStart), whole);
+        playChord(getFifthChordFreqs("E", 3, transpose, 2), 3, beatsElapsed(8 + sequenceStart), whole);
+        playChord(getFifthChordFreqs("F", 3, transpose, 2), 3, beatsElapsed(12 + sequenceStart), whole);
     }
 
     void accompanyingChordProgression(float sequenceStart, int transpose)
     { // 4 measures total
         cout << "chord accom playing octave " << transpose << " at time " << beatsElapsed(sequenceStart) << " " << endl;
-        playChord(getFifthChordFreqs("C", 3, transpose, 0), beatsElapsed(1.5 + sequenceStart), quarter);
-        playChord(getFifthChordFreqs("C", 3, transpose, 0), beatsElapsed(3 + sequenceStart), eighth);
+        playChord(getFifthChordFreqs("C", 4, transpose, 0), 2, beatsElapsed(1.5 + sequenceStart), quarter);
+        playChord(getFifthChordFreqs("C", 4, transpose, 0), 2, beatsElapsed(3 + sequenceStart), eighth);
 
-        playChord(getFifthChordFreqs("G", 3, transpose, 0), beatsElapsed(4 + 1.5 + sequenceStart), quarter);
-        playChord(getFifthChordFreqs("G", 3, transpose, 0), beatsElapsed(4 + 3 + sequenceStart), eighth);
+        playChord(getFifthChordFreqs("G", 4, transpose, 0), 2, beatsElapsed(4 + 1.5 + sequenceStart), quarter);
+        playChord(getFifthChordFreqs("G", 4, transpose, 0), 2, beatsElapsed(4 + 3 + sequenceStart), eighth);
 
-        playChord(getFifthChordFreqs("E", 3, transpose, 0), beatsElapsed(8 + 1.5 + sequenceStart), quarter);
-        playChord(getFifthChordFreqs("E", 3, transpose, 0), beatsElapsed(8 + 3 + sequenceStart), eighth);
+        playChord(getFifthChordFreqs("E", 4, transpose, 0), 2, beatsElapsed(8 + 1.5 + sequenceStart), quarter);
+        playChord(getFifthChordFreqs("E", 4, transpose, 0), 2, beatsElapsed(8 + 3 + sequenceStart), eighth);
 
-        playChord(getFifthChordFreqs("F", 3, transpose, 0), beatsElapsed(12 + 1.5 + sequenceStart), quarter);
-        playChord(getFifthChordFreqs("F", 3, transpose, 0), beatsElapsed(12 + 3 + sequenceStart), eighth);
+        playChord(getFifthChordFreqs("F", 4, transpose, 0), 2, beatsElapsed(12 + 1.5 + sequenceStart), quarter);
+        playChord(getFifthChordFreqs("F", 4, transpose, 0), 2, beatsElapsed(12 + 3 + sequenceStart), eighth);
     }
 
     void arpChordProgression(float sequenceStart, int transpose) //similar to Bloodeater by Mom
@@ -815,13 +815,13 @@ public:
 
     void transitionalChords(float sequenceStart, int transpose)
     {
-        playChord(getFifthChordFreqs("E", 2, transpose, 0), beatsElapsed(12 + sequenceStart), half);
-        playChord(getFifthChordFreqs("F", 2, transpose, 2), beatsElapsed(14 + sequenceStart), half);
+        playChord(getFifthChordFreqs("E", 2, transpose, 0), 3, beatsElapsed(12 + sequenceStart), half);
+        playChord(getFifthChordFreqs("F", 2, transpose, 2), 3, beatsElapsed(14 + sequenceStart), half);
     }
 
     void endingChords(float sequenceStart, int transpose)
     {
-        playChord(getFifthChordFreqs("E", 3, transpose, 2), beatsElapsed(sequenceStart), whole);
+        playChord(getFifthChordFreqs("E", 3, transpose, 2), 3, beatsElapsed(sequenceStart), whole);
 
         playNote(getFreq("C", 3, transpose), beatsElapsed(4 + sequenceStart), whole); // idk what chord this is but it's not a fifth
         playNote(getFreq("D", 3, transpose), beatsElapsed(4 + sequenceStart), whole);
@@ -844,28 +844,25 @@ public:
     // SONG:
     void playTune()
     {
-
         //PREP:
         srand((unsigned)time(NULL)); // seed the random number
         int key = rand() % 12;       // Number of steps we'll transpose the composition upwards
-        int introLength = 1; //Length of intro - 1, 2, or 3 phrases long
-        int bridgeLength = 2; //Length of bridge - 1 or 2 phrases long
-        int hiHatRNG = rand() % 2; // set initial hi hat pattern
-        int bassRNG = rand() % 3; // set initial bass battern
+        int introLength = 1 + (rand() % 3); //Length of intro - 1, 2, or 3 phrases long
+        int bridgeLength = 1 + (rand() % 2); //Length of bridge - 1 or 2 phrases long
+        int hiHatRNG = rand() % 3; // set initial hi hat pattern
+        int bassRNG = rand() % 4; // set initial bass battern
         cout << "intro length: " << introLength << endl;
         
         //PHRASE 1 (INTRO 1): DRUMS ONLY
         if(introLength == 3){
-            hiHatRNG = rand() % 2; // change hi hat pattern
             kickPattern(0);
-            arpChordProgression(0*16, key);
         }
 
         //PHRASE 2 (INTRO 2): DRUMS + BASSLINE + HIHAT
         if(introLength == 2 || introLength == 3){
             cout << "START PHRASE 2: " << beatsElapsed((introLength-2) * 16.0) << endl;
             kickPattern((introLength-2)*16);
-            hiHatRNG = rand() % 2; // change hi hat pattern
+            hiHatRNG = rand() % 3; // change hi hat pattern
             hiHatPattern(hiHatRNG, (introLength-2) * 16);
             bassPattern(bassRNG, (introLength-2) * 16, key);
         }
@@ -873,8 +870,8 @@ public:
         //PHRASE 3 (INTRO 3): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
         cout << "START PHRASE 3: " << beatsElapsed((introLength-1) * 16.0) << endl;
         kickPattern((introLength-1)*16);
-        hiHatRNG = rand() % 2; // change hi hat pattern
-        hiHatPattern(hiHatRNG, (introLength-1)*16);
+        // hiHatRNG = rand() % 2; // change hi hat pattern
+        // hiHatPattern(hiHatRNG, (introLength-1)*16);
         bassPattern(bassRNG, (introLength-1)*16, key);
         mainChordProgression((introLength-1)*16, key);
         accompanyingChordProgression((introLength-1)*16, key);
@@ -884,26 +881,26 @@ public:
         //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT 
         cout << "START PHRASE 4: " << beatsElapsed((introLength) * 16.0) << endl;
         kickPattern((introLength-1)*16);
-        hiHatRNG = rand() % 2; // change hi hat pattern
-        bassRNG = rand() % 3; // change bass pattern
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
         hiHatPattern(hiHatRNG, (introLength)*16);
         bassPattern(bassRNG, (introLength)*16, key);
         mainChordProgression((introLength)*16, key);
         accompanyingChordProgression((introLength)*16, key);
-        bassRNG = rand() % 3; // change bass pattern for bridge
+        bassRNG = rand() % 4; // change bass pattern for bridge
 
 
         //PHRASE 5 (BRIDGE 1): BASSLINE + DRUMS ONLY
         if(bridgeLength == 2){
-            cout << "START PHRASE 5: " << beatsElapsed((introLength+bridgeLength-1) * 16.0) << endl;
+            cout << "START PHRASE 5: " << beatsElapsed((introLength+1) * 16.0) << endl;
             bassPattern(bassRNG, (introLength+1)*16, key);
         }
 
         //PHRASE 6: HI HAT + DRUMS + TRANSITIONAL CHORDS
         cout << "START PHRASE 6: " << beatsElapsed((introLength+bridgeLength) * 16.0) << endl;
-        bassPattern(bassRNG, (introLength+1)*16, key);
-        arpChordProgression((introLength+1)*16, key); //beeps and boops
-        transitionalChords((introLength+1)*16, key);
+        bassPattern(bassRNG, (introLength+bridgeLength)*16, key);
+        arpChordProgression((introLength+bridgeLength)*16, key); //beeps and boops
+        // transitionalChords((introLength+bridgeLength)*16, key);
     }
 };
 
