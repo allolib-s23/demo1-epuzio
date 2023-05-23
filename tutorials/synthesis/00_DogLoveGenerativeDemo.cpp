@@ -233,7 +233,7 @@ public:
     void init() override
     {
         // Initialize burst - Main freq, filter freq, duration
-        mBurst = gam::Burst(20000, 15000, 0.05);
+        mBurst = gam::Burst(20000, 15000, 0.2);
     }
 
     // The audio processing function
@@ -522,45 +522,13 @@ public:
     bool onKeyDown(Keyboard const &k) override
     {
         playTune();
-
-        // // don't do anything for this demo
-
-        // if (ParameterGUI::usingKeyboard())
-        // { // Ignore keys if GUI is using
-        //   // keyboard
-        //   return true;
-        // }
-        // if (k.shift())
-        // {
-        //   // If shift pressed then keyboard sets preset
-        //   int presetNumber = asciiToIndex(k.key());
-        //   synthManager.recallPreset(presetNumber);
-        // }
-        // else
-        // {
-        //   // Otherwise trigger note for polyphonic synth
-        //   int midiNote = asciiToMIDI(k.key());
-        //   if (midiNote > 0)
-        //   {
-        //     synthManager.voice()->setInternalParameterValue(
-        //         "frequency", ::pow(2.f, (midiNote - 69.f) / 12.f) * 432.f);
-        //     synthManager.triggerOn(midiNote);
-        //   }
-        // }
         return true;
     }
 
     // Whenever a key is released this function is called
     bool onKeyUp(Keyboard const &k) override
     {
-        // again, do nothing for this demo
-
-        // int midiNote = asciiToMIDI(k.key());
-        // if (midiNote > 0)
-        // {
-        //   synthManager.triggerOff(midiNote);
-        // }
-        // return true;
+        return true;
     }
 
     void onExit() override { imguiShutdown(); }
@@ -610,6 +578,17 @@ public:
         voice->setInternalParameterValue("amplitude", amp);
         synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
     }
+
+    //  Modified from Professor Conrad's Frere Jacques Demo:
+    void playSine(float freq, float time, float duration, float amp = .2, float attack = 0.01, float decay = 0.01)
+    {
+        auto *voice = synthManager.synth().getVoice<SineEnv>();
+        // amp, freq, attack, release, pan
+        vector<VariantValue> params = vector<VariantValue>({amp, freq, 0.0, 0.0, 0.0});
+        voice->setTriggerParams(params);
+        synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
+    }
+
     // HELPER FUNCTIONS, CONSTS:
     float bpm = 130;
     const float beat = 60 / bpm;
@@ -633,7 +612,13 @@ public:
             playNote(freq[i], playTime, sus, (.2 / numNotes));
         }
     }
-    
+
+    void playChoralSynth(float freq, float playTime, float offset, float sus)
+    {
+        playSine(freq, playTime, sus, .1);
+        playSine(freq + 1, playTime + offset, sus, .1);
+        playSine(freq + 2, playTime + offset, sus, .1);
+    }
 
     // SONG COMPONENTS:
     // bassline:
@@ -748,14 +733,17 @@ public:
 
     //riser snare (inspired by Christine's Krewella demo!):
     void riserPattern(int sequenceStart) {
-        for(int i = 0; i < 4; i++){
-            playSnare(beatsElapsed(sequenceStart+(i*4)));
+        // for(int i = 0; i < 8; i++){
+        //     playSnare(beatsElapsed(sequenceStart+(i*2)));
+        // }
+        for(int i = 0; i < 8; i++){
+            playSnare(beatsElapsed(0+sequenceStart+(i)));
         }
         for(int i = 0; i < 8; i++){
-            playSnare(beatsElapsed(16+sequenceStart+(i*2)));
+            playSnare(beatsElapsed(8+sequenceStart+(i*.5)));
         }
         for(int i = 0; i < 16; i++){
-            playSnare(beatsElapsed(24+sequenceStart+(i)));
+            playSnare(beatsElapsed(12+sequenceStart+(i*.25)));
         }
   }
 
@@ -819,6 +807,10 @@ public:
         playChord(getFifthChordFreqs("F", 2, transpose, 2), 3, beatsElapsed(14 + sequenceStart), half);
     }
 
+    void choralC(float sequenceStart, int transpose){
+        playChoralSynth(getFreq("C", 4, transpose), beatsElapsed(sequenceStart), beatsElapsed(.25), whole);
+    }
+
     void endingChords(float sequenceStart, int transpose)
     {
         playChord(getFifthChordFreqs("E", 3, transpose, 2), 3, beatsElapsed(sequenceStart), whole);
@@ -852,7 +844,7 @@ public:
         int hiHatRNG = rand() % 3; // set initial hi hat pattern
         int bassRNG = rand() % 4; // set initial bass battern
         cout << "intro length: " << introLength << endl;
-        
+
         //PHRASE 1 (INTRO 1): DRUMS ONLY
         if(introLength == 3){
             kickPattern(0);
@@ -870,15 +862,15 @@ public:
         //PHRASE 3 (INTRO 3): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
         cout << "START PHRASE 3: " << beatsElapsed((introLength-1) * 16.0) << endl;
         kickPattern((introLength-1)*16);
-        // hiHatRNG = rand() % 2; // change hi hat pattern
-        // hiHatPattern(hiHatRNG, (introLength-1)*16);
+        hiHatRNG = rand() % 2; // change hi hat pattern
+        hiHatPattern(hiHatRNG, (introLength-1)*16);
         bassPattern(bassRNG, (introLength-1)*16, key);
         mainChordProgression((introLength-1)*16, key);
         accompanyingChordProgression((introLength-1)*16, key);
-        riserPattern((introLength-1)*16);
+        
         
 
-        //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT 
+        //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + SYNTH DRONE
         cout << "START PHRASE 4: " << beatsElapsed((introLength) * 16.0) << endl;
         kickPattern((introLength-1)*16);
         hiHatRNG = rand() % 3; // change hi hat pattern
@@ -888,6 +880,8 @@ public:
         mainChordProgression((introLength)*16, key);
         accompanyingChordProgression((introLength)*16, key);
         bassRNG = rand() % 4; // change bass pattern for bridge
+        riserPattern((introLength)*16);
+        choralC(introLength*16, key);
 
 
         //PHRASE 5 (BRIDGE 1): BASSLINE + DRUMS ONLY
@@ -900,7 +894,7 @@ public:
         cout << "START PHRASE 6: " << beatsElapsed((introLength+bridgeLength) * 16.0) << endl;
         bassPattern(bassRNG, (introLength+bridgeLength)*16, key);
         arpChordProgression((introLength+bridgeLength)*16, key); //beeps and boops
-        // transitionalChords((introLength+bridgeLength)*16, key);
+        transitionalChords((introLength+bridgeLength)*16, key);
     }
 };
 
