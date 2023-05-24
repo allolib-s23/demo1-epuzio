@@ -17,50 +17,36 @@ float getFreq(string n, int octave, int transpose = 0){ //chorus effect!
     return frequency;
 }
 
-vector<float> getFifthChordFreqs(string n, int octave, int transpose, int inversion){
+vector<float> getFifthChordFreqs(string n, int octave, int transpose = 0, int inversion = 0){
     float rootFreq = 440, thirdFreq = 440, fifthFreq = 440;
     vector<float> frequencies;
     unordered_map<string, float> notes{
         {"A", 0}, {"A#", 1}, {"Bb", 1}, {"B", 2}, {"C", 3}, {"C#", 4}, {"Db", 4}, {"D", 5}, {"D#", 6}, 
         {"Eb", 6}, {"E", 7}, {"F", 8}, {"F#", 9}, {"Gb", 9}, {"G", 10}, {"G#", 11}, {"Ab", 11}
     };
-    float dist = notes[n] + transpose + ((octave - 1) * 12) +1;
+    float dist = notes[n] + transpose + ((octave - 1) * 12);
     rootFreq = freqFromA(dist);
     
     switch(inversion){
         case 0: //Root Position
-            thirdFreq = freqFromA(dist + 4);
+            thirdFreq = freqFromA(dist + 5);
             fifthFreq = freqFromA(dist + 7);
+            break;
         case 1: // First Inversion
-            thirdFreq = freqFromA(dist - 8);
+            thirdFreq = freqFromA(dist - 9);
             fifthFreq = freqFromA(dist - 5);
+            break;
         case 2: //Second Inversion
-            thirdFreq = freqFromA(dist + 4);
+            thirdFreq = freqFromA(dist + 3);
             fifthFreq = freqFromA(dist - 5);
+            break;
     }
     frequencies.push_back(rootFreq);
     frequencies.push_back(thirdFreq);
     frequencies.push_back(fifthFreq);
+    for(auto f: frequencies){
+        cout << "freq: " << f << endl;
+    }
+    cout << "\n";
     return frequencies;
 }
-
-// Table for reference:
-/*
-    const float C = 16.35;
-    const float Cs = 17.32;
-    const float Db = 17.32;
-    const float D = 18.35;
-    const float Ds = 19.45;
-    const float D = 19.45;
-    const float E = 20.6; 
-    const float F = 21.83;
-    const float Fs = 23.12;
-    const float Gb = 23.12;
-    const float G = 24.50;
-    const float Gs = 25.96;
-    const float Ab = 25.96;
-    const float A = 27.50;
-    const float As = 29.14;
-    const float Bb = 29.14;
-    const float B = 30.87;
-*/
