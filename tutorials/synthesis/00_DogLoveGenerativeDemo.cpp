@@ -537,7 +537,6 @@ public:
     //  From Professor Conrad's Frere Jacques Demo:
     void playNote(float freq, float time, float duration, float amp = .2, float attack = 0.01, float decay = 0.01)
     {
-        cout << "Freq: " << freq << endl;
         auto *voice = synthManager.synth().getVoice<SquareWave>();
         // amp, freq, attack, release, pan
         vector<VariantValue> params = vector<VariantValue>({amp, freq, 0.0, 0.0, 0.0});
@@ -625,8 +624,7 @@ public:
     // SONG COMPONENTS:
     // bassline:
     void bassPattern(int sw, int sequenceStart, int transpose) //sequence start refers to beats btw
-    { // 4 measures of 4 beats, 4 different bassline variations
-        cout << "bass playing case " << sw << " at time " << beatsElapsed(sequenceStart) << " transposed by " << transpose << endl;
+    { // 4 measures of 4 beats, 4 different bassline variationsd
         switch (sw)
         {
         case 0: //[X X X X]
@@ -639,7 +637,6 @@ public:
             {
                 playBass(getFreq("G", 2, transpose), beatsElapsed(4 + j + sequenceStart), eighth);
             }
-            cout << "CASE 1" << endl;
             for (int j = 8; j < 12; j++)
             {
                 playBass(getFreq("E", 2, transpose), beatsElapsed(8 + j + sequenceStart), eighth);
@@ -693,7 +690,6 @@ public:
     { // 4 measures of the same syncopated kick drum pattern
         for (int i = 0; i < 4; i++)
         {
-            cout << "Play Kick: " << beatsElapsed(0 + (i * 4) + sequenceStart) << endl;
             playKick(200, beatsElapsed(0 + (i * 4) + sequenceStart));
             playKick(200, beatsElapsed(1 + (i * 4) + sequenceStart));
             playKick(200, beatsElapsed(2.5 + (i * 4) + sequenceStart));
@@ -704,7 +700,6 @@ public:
     // hihat:
     void hiHatPattern(int sw, int sequenceStart)
     { // 3 different variations, 4 measures of 4 beats
-        cout << "hi hat playing case " << sw << " at time " << beatsElapsed(sequenceStart) << " " << endl;
         switch (sw)
         {
         case 0:
@@ -738,9 +733,6 @@ public:
 
     //riser snare (inspired by Christine's Krewella demo!):
     void riserPattern(int sequenceStart) {
-        // for(int i = 0; i < 8; i++){
-        //     playSnare(beatsElapsed(sequenceStart+(i*2)));
-        // }
         for(int i = 0; i < 8; i++){
             playSnare(beatsElapsed(0+sequenceStart+(i)));
         }
@@ -763,7 +755,6 @@ public:
 
     void accompanyingChordProgression(float sequenceStart, int transpose)
     { // 4 measures total
-        cout << "chord accom playing octave " << transpose << " at time " << beatsElapsed(sequenceStart) << " " << endl;
         playChord(getFifthChordFreqs("C", 4, transpose, 0), 2, beatsElapsed(1.5 + sequenceStart), quarter);
         playChord(getFifthChordFreqs("C", 4, transpose, 0), 2, beatsElapsed(3 + sequenceStart), eighth);
 
