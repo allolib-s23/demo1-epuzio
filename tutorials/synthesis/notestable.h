@@ -12,7 +12,7 @@ float getFreq(string n, int octave, int transpose = 0){ //chorus effect!
         {"A", 0}, {"A#", 1}, {"Bb", 1}, {"B", 2}, {"C", 3}, {"C#", 4}, {"Db", 4}, {"D", 5}, {"D#", 6}, 
         {"Eb", 6}, {"E", 7}, {"F", 8}, {"F#", 9}, {"Gb", 9}, {"G", 10}, {"G#", 11}, {"Ab", 11}
     };
-    float dist = notes[n] + transpose + ((octave - 1) * 12) +1;
+    float dist = notes[n] + transpose + ((octave - 1) * 12);
     float frequency = freqFromA(dist);
     return frequency;
 }
@@ -29,24 +29,20 @@ vector<float> getFifthChordFreqs(string n, int octave, int transpose = 0, int in
     
     switch(inversion){
         case 0: //Root Position
-            thirdFreq = freqFromA(dist + 5);
+            thirdFreq = freqFromA(dist + 4);
             fifthFreq = freqFromA(dist + 7);
             break;
         case 1: // First Inversion
-            thirdFreq = freqFromA(dist - 9);
+            thirdFreq = freqFromA(dist - 8);
             fifthFreq = freqFromA(dist - 5);
             break;
         case 2: //Second Inversion
-            thirdFreq = freqFromA(dist + 3);
+            thirdFreq = freqFromA(dist + 4);
             fifthFreq = freqFromA(dist - 5);
             break;
     }
     frequencies.push_back(rootFreq);
     frequencies.push_back(thirdFreq);
     frequencies.push_back(fifthFreq);
-    for(auto f: frequencies){
-        cout << "freq: " << f << endl;
-    }
-    cout << "\n";
     return frequencies;
 }

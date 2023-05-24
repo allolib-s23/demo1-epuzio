@@ -106,16 +106,16 @@ public:
 
     virtual void onProcess(Graphics &g)
     {
-        float frequency = getInternalParameterValue("frequency");
-        float amplitude = getInternalParameterValue("amplitude");
-        g.pushMatrix();
-        g.translate(amplitude, amplitude, -4);
-        // g.scale(frequency/2000, frequency/4000, 1);
-        float scaling = 0.1;
-        g.scale(scaling * frequency / 200, scaling * frequency / 400, scaling * 1);
-        g.color(mEnvFollow.value(), frequency / 1000, mEnvFollow.value() * 10, 0.4);
-        g.draw(mMesh);
-        g.popMatrix();
+        // float frequency = getInternalParameterValue("frequency");
+        // float amplitude = getInternalParameterValue("amplitude");
+        // g.pushMatrix();
+        // g.translate(amplitude, amplitude, -4);
+        // // g.scale(frequency/2000, frequency/4000, 1);
+        // float scaling = 0.1;
+        // g.scale(scaling * frequency / 200, scaling * frequency / 400, scaling * 1);
+        // g.color(mEnvFollow.value(), frequency / 1000, mEnvFollow.value() * 10, 0.4);
+        // g.draw(mMesh);
+        // g.popMatrix();
     }
 
     virtual void onTriggerOn() override
@@ -505,17 +505,17 @@ public:
 
     void onAnimate(double dt) override
     {
-        imguiBeginFrame();                    // The GUI is prepared here
-        synthManager.drawSynthControlPanel(); // Draw a window that contains the synth control panel
-        imguiEndFrame();
+        // imguiBeginFrame();                    // The GUI is prepared here
+        // synthManager.drawSynthControlPanel(); // Draw a window that contains the synth control panel
+        // imguiEndFrame();
     }
 
     // The graphics callback function.
     void onDraw(Graphics &g) override
     {
-        g.clear();
-        synthManager.render(g); // Render the synth's graphics
-        imguiDraw();            // GUI is drawn here
+        // g.clear();
+        // synthManager.render(g); // Render the synth's graphics
+        // imguiDraw();            // GUI is drawn here
     }
 
     // Whenever a key is pressed, this function is called
@@ -537,6 +537,7 @@ public:
     //  From Professor Conrad's Frere Jacques Demo:
     void playNote(float freq, float time, float duration, float amp = .2, float attack = 0.01, float decay = 0.01)
     {
+        cout << "Freq: " << freq << endl;
         auto *voice = synthManager.synth().getVoice<SquareWave>();
         // amp, freq, attack, release, pan
         vector<VariantValue> params = vector<VariantValue>({amp, freq, 0.0, 0.0, 0.0});
@@ -617,8 +618,8 @@ public:
     void playChoralSynth(float freq, float playTime, float offset, float sus)
     {
         playSine(freq, playTime, sus, .1);
-        playSine(freq + 1, playTime + offset, sus, .1);
-        playSine(freq + 2, playTime + offset, sus, .1);
+        playSine(freq + 1, playTime, sus, .1);
+        playSine(freq + 2, playTime, sus, .1);
     }
 
     // SONG COMPONENTS:
@@ -679,6 +680,12 @@ public:
             playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3 + sequenceStart), quarter);
             break;
         }
+    }
+
+    void endingBass(int sequenceStart, int transpose){
+        playBass(getFreq("C", 2, transpose), beatsElapsed(0 + sequenceStart), eighth);
+        playBass(getFreq("C", 2, transpose), beatsElapsed(1 + sequenceStart), eighth);
+        playBass(getFreq("C", 2, transpose), beatsElapsed(2 + sequenceStart), eighth);
     }
 
     // kick drum:
@@ -748,10 +755,9 @@ public:
     // Chord Progressions
     void mainChordProgression(float sequenceStart, int transpose)
     { // four measures total (4/4)
-        cout << "chords playing octave " << transpose << " at time " << beatsElapsed(sequenceStart) << " " << endl;
         playChord(getFifthChordFreqs("C", 3, transpose, 0), 3, sequenceStart, whole);
         playChord(getFifthChordFreqs("G", 3, transpose, 0), 3, beatsElapsed(4 + sequenceStart), whole);
-        playChord(getFifthChordFreqs("A", 4, transpose, 2), 3, beatsElapsed(8 + sequenceStart), whole);
+        playChord(getFifthChordFreqs("E", 3, transpose, 0), 3, beatsElapsed(8 + sequenceStart), whole);
         playChord(getFifthChordFreqs("F", 3, transpose, 0), 3, beatsElapsed(12 + sequenceStart), whole);
     }
 
@@ -764,8 +770,8 @@ public:
         playChord(getFifthChordFreqs("G", 4, transpose, 0), 2, beatsElapsed(4 + 1.5 + sequenceStart), quarter);
         playChord(getFifthChordFreqs("G", 4, transpose, 0), 2, beatsElapsed(4 + 3 + sequenceStart), eighth);
 
-        playChord(getFifthChordFreqs("A", 4, transpose, 2), 2, beatsElapsed(8 + 1.5 + sequenceStart), quarter);
-        playChord(getFifthChordFreqs("A", 4, transpose, 2), 2, beatsElapsed(8 + 3 + sequenceStart), eighth);
+        playChord(getFifthChordFreqs("E", 4, transpose, 0), 2, beatsElapsed(8 + 1.5 + sequenceStart), quarter);
+        playChord(getFifthChordFreqs("E", 4, transpose, 0), 2, beatsElapsed(8 + 3 + sequenceStart), eighth);
 
         playChord(getFifthChordFreqs("F", 4, transpose, 0), 2, beatsElapsed(12 + 1.5 + sequenceStart), quarter);
         playChord(getFifthChordFreqs("F", 4, transpose, 0), 2, beatsElapsed(12 + 3 + sequenceStart), eighth);
@@ -800,8 +806,8 @@ public:
 
     void transitionalChords(float sequenceStart, int transpose)
     {
-        playChord(getFifthChordFreqs("E", 2, transpose, 0), 3, beatsElapsed(12 + sequenceStart), half);
-        playChord(getFifthChordFreqs("F", 2, transpose, 2), 3, beatsElapsed(14 + sequenceStart), half);
+        playChord(getFifthChordFreqs("E", 3, transpose, 0), 3, beatsElapsed(12 + sequenceStart), half);
+        playChord(getFifthChordFreqs("F", 3, transpose, 2), 3, beatsElapsed(14 + sequenceStart), half);
     }
 
     void choralC(float sequenceStart, int transpose){
@@ -810,10 +816,10 @@ public:
 
     void endingChords(float sequenceStart, int transpose)
     {
-        playChord(getFifthChordFreqs("E", 3, transpose, 2), 3, beatsElapsed(sequenceStart), whole);
+        playChord(getFifthChordFreqs("C", 4, transpose, 2), 3, beatsElapsed(sequenceStart), whole);
 
         playNote(getFreq("C", 3, transpose), beatsElapsed(4 + sequenceStart), whole); // idk what chord this is but it's not a fifth
-        playNote(getFreq("D", 3, transpose), beatsElapsed(4 + sequenceStart), whole);
+        // playNote(getFreq("D", 3, transpose), beatsElapsed(4 + sequenceStart), whole);
         playNote(getFreq("G", 3, transpose), beatsElapsed(4 + sequenceStart), whole);
 
         playNote(getFreq("C", 3, transpose), beatsElapsed(8 + sequenceStart), whole * 2);
@@ -827,13 +833,12 @@ public:
         playNote(getFreq("E", 4, transpose), beatsElapsed(13 + sequenceStart), quarter);
         playNote(getFreq("D", 4, transpose), beatsElapsed(14 + sequenceStart), eighth);
         playNote(getFreq("D", 4, transpose), beatsElapsed(15 + sequenceStart), eighth);
-        playNote(getFreq("D", 4, transpose), beatsElapsed(15.5 + sequenceStart), whole);
+        playNote(getFreq("C", 4, transpose), beatsElapsed(15.5 + sequenceStart), whole);
     }
 
     // SONG:
     void playTune()
     {
-
         //PREP:
         srand((unsigned)time(NULL)); // seed the random number
         int key = rand() % 12;       // Number of steps we'll transpose the composition upwards
@@ -855,16 +860,16 @@ public:
             bassPattern(bassRNG, (introLength-2) * 16, key);
         }
 
-        //PHRASE 3 (INTRO 3): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
+        //PHRASE 3 (INTRO 3/VERSE 1): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
         kickPattern((introLength-1)*16);
-        hiHatRNG = rand() % 2; // change hi hat pattern
+        hiHatRNG = rand() % 3; // change hi hat pattern
         hiHatPattern(hiHatRNG, (introLength-1)*16);
         bassPattern(bassRNG, (introLength-1)*16, key);
         mainChordProgression((introLength-1)*16, key);
         accompanyingChordProgression((introLength-1)*16, key);
         
-        //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + SYNTH DRONE
-        kickPattern((introLength-1)*16);
+        //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER
+        kickPattern((introLength)*16);
         hiHatRNG = rand() % 3; // change hi hat pattern
         bassRNG = rand() % 4; // change bass pattern
         hiHatPattern(hiHatRNG, (introLength)*16);
@@ -873,7 +878,8 @@ public:
         accompanyingChordProgression((introLength)*16, key);
         bassRNG = rand() % 4; // change bass pattern for bridge
         riserPattern((introLength)*16);
-        choralC(introLength*16, key);
+
+
 
         //PHRASE 5 (BRIDGE 1): BASSLINE ONLY
         if(bridgeLength == 2){
@@ -884,6 +890,32 @@ public:
         bassPattern(bassRNG, (introLength+bridgeLength)*16, key);
         arpChordProgression((introLength+bridgeLength)*16, key); //beeps and boops
         transitionalChords((introLength+bridgeLength)*16, key);
+
+        //PHRASE 7 (CHORUS): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + ARP
+        kickPattern((introLength+bridgeLength+1)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength + bridgeLength + 1)*16);
+        bassPattern(bassRNG, (introLength + bridgeLength + 1)*16, key);
+        mainChordProgression((introLength + bridgeLength + 1)*16, key);
+        accompanyingChordProgression((introLength+bridgeLength + 1)*16, key);
+        arpChordProgression((introLength + bridgeLength + 1)*16, key);
+
+        //PHRASE 8 (CHORUS 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + ARP
+        kickPattern((introLength + bridgeLength + 2)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength + bridgeLength + 2)*16);
+        bassPattern(bassRNG, (introLength + bridgeLength + 2)*16, key);
+        mainChordProgression((introLength + bridgeLength + 2)*16, key);
+        accompanyingChordProgression((introLength + bridgeLength + 2)*16, key);
+        arpChordProgression((introLength + bridgeLength + 2)*16, key);
+        riserPattern((introLength + bridgeLength + 2)*16);
+
+        //PHRASE 9 (OUTRO): ENDING CHORDS + ENDING MELODY + ENDING BASS
+        endingChords((introLength + bridgeLength + 3)*16, key);
+        endingMelody((introLength + bridgeLength + 3)*16, key);
+        endingBass((introLength + bridgeLength + 3)*16, key);
     }
 };
 
