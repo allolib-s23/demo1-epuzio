@@ -607,9 +607,10 @@ public:
 
     void playChord(vector<float> freq, int numNotes, float playTime, float sus)
     {
-        for (int i = 0; i < numNotes; i++)
+        
+        for (auto f : freq)
         {
-            playNote(freq[i], playTime, sus, (.2 / numNotes));
+            playNote(f, playTime, sus, (.2 / numNotes));
         }
     }
 
@@ -832,59 +833,57 @@ public:
     // SONG:
     void playTune()
     {
-        mainChordProgression((0)*16, 0);
-        // bassPattern(1, 0, 0);
 
-        // //PREP:
-        // srand((unsigned)time(NULL)); // seed the random number
-        // int key = rand() % 12;       // Number of steps we'll transpose the composition upwards
-        // int introLength = 1 + (rand() % 3); //Length of intro - 1, 2, or 3 phrases long
-        // int bridgeLength = 1 + (rand() % 2); //Length of bridge - 1 or 2 phrases long
-        // int hiHatRNG = rand() % 3; // set initial hi hat pattern
-        // int bassRNG = rand() % 4; // set initial bass battern
+        //PREP:
+        srand((unsigned)time(NULL)); // seed the random number
+        int key = rand() % 12;       // Number of steps we'll transpose the composition upwards
+        int introLength = 1 + (rand() % 3); //Length of intro - 1, 2, or 3 phrases long
+        int bridgeLength = 1 + (rand() % 2); //Length of bridge - 1 or 2 phrases long
+        int hiHatRNG = rand() % 3; // set initial hi hat pattern
+        int bassRNG = rand() % 4; // set initial bass battern
 
-        // //PHRASE 1 (INTRO 1): DRUMS ONLY
-        // if(introLength == 3){
-        //     kickPattern(0);
-        // }
+        //PHRASE 1 (INTRO 1): DRUMS ONLY
+        if(introLength == 3){
+            kickPattern(0);
+        }
 
-        // //PHRASE 2 (INTRO 2): DRUMS + BASSLINE + HIHAT
-        // if(introLength == 2 || introLength == 3){
-        //     kickPattern((introLength-2)*16);
-        //     hiHatRNG = rand() % 3; // change hi hat pattern
-        //     hiHatPattern(hiHatRNG, (introLength-2) * 16);
-        //     bassPattern(bassRNG, (introLength-2) * 16, key);
-        // }
+        //PHRASE 2 (INTRO 2): DRUMS + BASSLINE + HIHAT
+        if(introLength == 2 || introLength == 3){
+            kickPattern((introLength-2)*16);
+            hiHatRNG = rand() % 3; // change hi hat pattern
+            hiHatPattern(hiHatRNG, (introLength-2) * 16);
+            bassPattern(bassRNG, (introLength-2) * 16, key);
+        }
 
-        // //PHRASE 3 (INTRO 3): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
-        // kickPattern((introLength-1)*16);
-        // hiHatRNG = rand() % 2; // change hi hat pattern
-        // hiHatPattern(hiHatRNG, (introLength-1)*16);
-        // bassPattern(bassRNG, (introLength-1)*16, key);
-        // mainChordProgression((introLength-1)*16, key);
-        // accompanyingChordProgression((introLength-1)*16, key);
+        //PHRASE 3 (INTRO 3): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
+        kickPattern((introLength-1)*16);
+        hiHatRNG = rand() % 2; // change hi hat pattern
+        hiHatPattern(hiHatRNG, (introLength-1)*16);
+        bassPattern(bassRNG, (introLength-1)*16, key);
+        mainChordProgression((introLength-1)*16, key);
+        accompanyingChordProgression((introLength-1)*16, key);
         
-        // //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + SYNTH DRONE
-        // kickPattern((introLength-1)*16);
-        // hiHatRNG = rand() % 3; // change hi hat pattern
-        // bassRNG = rand() % 4; // change bass pattern
-        // hiHatPattern(hiHatRNG, (introLength)*16);
-        // bassPattern(bassRNG, (introLength)*16, key);
-        // mainChordProgression((introLength)*16, key);
-        // accompanyingChordProgression((introLength)*16, key);
-        // bassRNG = rand() % 4; // change bass pattern for bridge
-        // riserPattern((introLength)*16);
-        // choralC(introLength*16, key);
+        //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + SYNTH DRONE
+        kickPattern((introLength-1)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength)*16);
+        bassPattern(bassRNG, (introLength)*16, key);
+        mainChordProgression((introLength)*16, key);
+        accompanyingChordProgression((introLength)*16, key);
+        bassRNG = rand() % 4; // change bass pattern for bridge
+        riserPattern((introLength)*16);
+        choralC(introLength*16, key);
 
-        // //PHRASE 5 (BRIDGE 1): BASSLINE ONLY
-        // if(bridgeLength == 2){
-        //     bassPattern(bassRNG, (introLength+1)*16, key);
-        // }
+        //PHRASE 5 (BRIDGE 1): BASSLINE ONLY
+        if(bridgeLength == 2){
+            bassPattern(bassRNG, (introLength+1)*16, key);
+        }
 
-        // //PHRASE 6 (BRIDGE 2): BASSLINE + ARP + TRANSITIONAL CHORDS
-        // bassPattern(bassRNG, (introLength+bridgeLength)*16, key);
-        // arpChordProgression((introLength+bridgeLength)*16, key); //beeps and boops
-        // transitionalChords((introLength+bridgeLength)*16, key);
+        //PHRASE 6 (BRIDGE 2): BASSLINE + ARP + TRANSITIONAL CHORDS
+        bassPattern(bassRNG, (introLength+bridgeLength)*16, key);
+        arpChordProgression((introLength+bridgeLength)*16, key); //beeps and boops
+        transitionalChords((introLength+bridgeLength)*16, key);
     }
 };
 
