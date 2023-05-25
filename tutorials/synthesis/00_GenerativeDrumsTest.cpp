@@ -722,13 +722,13 @@ public:
     //     }
     // }
 
-    void playFibonacciLFSR(int prevState, int sequenceStart, int numBeats){
-        //fibLFSR takes in an int (4 bits) which represent previous 4 states, 
-        //outputs a new bit based on previous 4 states
+    void playFibLFSRDrums(int prevState, int sequenceStart, int numBeats){
+        //4-bit LFSR, taps at 3, 4, generate a 15-cycle long sequence
+        //Reference: https://simple.wikipedia.org/wiki/Linear-feedback_shift_register
         bool outputBit;
         int prev = prevState;
         for(int c = sequenceStart; c < sequenceStart + numBeats; c++){
-            outputBit = fibLFSR(prev);
+            outputBit = fibLFSR(prev, {0, 0, 1, 1});
             if(outputBit){
                 playKick(200, beatsElapsed(sequenceStart + c));
                 cout << prev << ": X" << endl;
@@ -741,7 +741,7 @@ public:
     // SONG:
     void playTune()
     {
-        playFibonacciLFSR(0b1100, 0, 32);
+        playFibLFSRDrums(0b1001, 0, 32);
     }
 };
 

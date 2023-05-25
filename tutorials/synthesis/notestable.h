@@ -7,8 +7,8 @@ float freqFromA(int distance){
     return 27.50 * pow(2, (distance)/12.0);
 }
 
-vector<bool> LFSR(bool input1, bool input2){ 
-    //Linear Feedback Shift Register (based on the Illyana by Omiindustriies)
+vector<bool> booleanLogicModule(bool input1, bool input2){ 
+    //Boolean Logic Module (based on the Illyana by Omiindustriies)
     //Given 2 input signals, calculate 4 output signals (or, xor, and, nand)
     vector<bool> output;
     output.push_back(input1 || input2); //OR
@@ -18,14 +18,15 @@ vector<bool> LFSR(bool input1, bool input2){
     return output;
 }
 
-bool fibLFSR(int input){ 
-    //Linear Feedback Shift Register (based on the 4-bit Fibonacci LFSR on Wikipedia: https://en.wikipedia.org/wiki/Linear-feedback_shift_register)
-    // should have a maximum cycle of 15
-    //taps are 4, 3
-    bool output = 1;
-    output = ((input>>3) ^ (input>>2)&0xC);
-    cout << "OUTPUT : " << (input>>3) << " or " << ((input>>2)&0xC) << endl;
-    cout << "out: " << ((input>>3) ^ (input>>2)&0xC) <<endl;
+bool fibLFSR(int input, vector<bool> taps){ 
+    //Linear Feedback Shift Register (based on the Fibonacci LFSR, Wikipedia: https://en.wikipedia.org/wiki/Linear-feedback_shift_register)
+    //calculate output by xor'ing the bits at each tap
+    bool output = (taps[0] & 0b1);
+    for(int i = 1; i < taps.size(); i++){
+        if(taps[i]){
+            output = output ^ ((input>>i)&0b1);
+        }
+    }
     return output;
 }
 
