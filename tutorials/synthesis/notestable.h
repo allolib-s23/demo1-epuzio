@@ -7,7 +7,29 @@ float freqFromA(int distance){
     return 27.50 * pow(2, (distance)/12.0);
 }
 
-float getFreq(string n, int octave, int transpose = 0){ //chorus effect!
+vector<bool> LFSR(bool input1, bool input2){ 
+    //Linear Feedback Shift Register (based on the Illyana by Omiindustriies)
+    //Given 2 input signals, calculate 4 output signals (or, xor, and, nand)
+    vector<bool> output;
+    output.push_back(input1 || input2); //OR
+    output.push_back(input1 ^ input2); //XOR
+    output.push_back(input1 && input2); //AND
+    output.push_back(!(input1 && input2)); //NAND
+    return output;
+}
+
+bool fibLFSR(int input){ 
+    //Linear Feedback Shift Register (based on the 4-bit Fibonacci LFSR on Wikipedia: https://en.wikipedia.org/wiki/Linear-feedback_shift_register)
+    // should have a maximum cycle of 15
+    //taps are 4, 3
+    bool output = 1;
+    output = ((input>>3) ^ (input>>2)&0xC);
+    cout << "OUTPUT : " << (input>>3) << " or " << ((input>>2)&0xC) << endl;
+    cout << "out: " << ((input>>3) ^ (input>>2)&0xC) <<endl;
+    return output;
+}
+
+float getFreq(string n, int octave, int transpose = 0){
     unordered_map<string, float> notes{
         {"A", 0}, {"A#", 1}, {"Bb", 1}, {"B", 2}, {"C", 3}, {"C#", 4}, {"Db", 4}, {"D", 5}, {"D#", 6}, 
         {"Eb", 6}, {"E", 7}, {"F", 8}, {"F#", 9}, {"Gb", 9}, {"G", 10}, {"G#", 11}, {"Ab", 11}
