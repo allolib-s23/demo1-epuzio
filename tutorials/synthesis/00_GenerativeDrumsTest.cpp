@@ -21,7 +21,7 @@
 #include "al/ui/al_Parameter.hpp"
 #include "al/math/al_Random.hpp"
 
-#include "notestable.h" //theory class I wrote to transpose chords/notes
+#include "randomnessHelper.h" //theory class I wrote to transpose chords/notes
 #include <stdlib.h>     //To use to generate random numbers
 #include <time.h>       //To use to generate random numbers
 
@@ -607,10 +607,17 @@ public:
 
     void playChord(vector<float> freq, int numNotes, float playTime, float sus)
     {
-        
         for (auto f : freq)
         {
             playNote(f, playTime, sus, (.2 / numNotes));
+        }
+    }
+
+    void playChordOctaveUp(vector<float> freq, int numNotes, float playTime, float sus)
+    {
+        for (auto f : freq)
+        {
+            playNote(f*2, playTime, sus, (.2 / numNotes));
         }
     }
 
@@ -623,7 +630,7 @@ public:
 
     // SONG COMPONENTS:
     // bassline:
-    void bassPattern(int sw, int sequenceStart, int transpose) //sequence start refers to beats btw
+    void bassPattern(int sw, int sequenceStart, int transpose, vector<vector<float>> cp) //sequence start refers to beats btw
     { // 4 measures of 4 beats, 4 different bassline variationsd
         switch (sw)
         {
@@ -631,58 +638,58 @@ public:
 
             for (int j = 0; j < 4; j++)
             {
-                playBass(getFreq("C", 2, transpose), beatsElapsed(j + sequenceStart), eighth);
+                playBass(cp[0][0], beatsElapsed(j + sequenceStart), eighth);
             }
             for (int j = 4; j < 8; j++)
             {
-                playBass(getFreq("G", 2, transpose), beatsElapsed(4 + j + sequenceStart), eighth);
+                playBass(cp[1][0], beatsElapsed(4 + j + sequenceStart), eighth);
             }
             for (int j = 8; j < 12; j++)
             {
-                playBass(getFreq("E", 2, transpose), beatsElapsed(8 + j + sequenceStart), eighth);
+                playBass(cp[2][0], beatsElapsed(8 + j + sequenceStart), eighth);
             }
             for (int j = 12; j < 16; j++)
             {
-                playBass(getFreq("F", 2, transpose), beatsElapsed(12 + j + sequenceStart), eighth);
+                playBass(cp[3][0], beatsElapsed(12 + j + sequenceStart), eighth);
             }
             break;
         case 1: // [X->X - X]
 
-            playBass(getFreq("C", 2, transpose), beatsElapsed(0 + sequenceStart), half);
-            playBass(getFreq("C", 2, transpose), beatsElapsed(3 + sequenceStart), quarter);
+            playBass(cp[0][0]/2, beatsElapsed(0 + sequenceStart), half);
+            playBass(cp[0][0]/2, beatsElapsed(3 + sequenceStart), quarter);
 
-            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0 + sequenceStart), half);
-            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3 + sequenceStart), quarter);
+            playBass(cp[1][0]/2, beatsElapsed(4 + 0 + sequenceStart), half);
+            playBass(cp[1][0]/2, beatsElapsed(4 + 3 + sequenceStart), quarter);
 
-            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0 + sequenceStart), half);
-            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3 + sequenceStart), quarter);
+            playBass(cp[2][0]/2, beatsElapsed(8 + 0 + sequenceStart), half);
+            playBass(cp[2][0]/2, beatsElapsed(8 + 3 + sequenceStart), quarter);
 
-            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0 + sequenceStart), half);
-            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3 + sequenceStart), quarter);
+            playBass(cp[3][0]/2, beatsElapsed(12 + 0 + sequenceStart), half);
+            playBass(cp[3][0]/2, beatsElapsed(12 + 3 + sequenceStart), quarter);
             break;
         case 2: //[X->X - -]
-            playBass(getFreq("C", 2, transpose), beatsElapsed(0 + sequenceStart), half);
-            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0 + sequenceStart), half);
-            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0 + sequenceStart), half);
-            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0 + sequenceStart), half);
+            playBass(cp[0][0]/2, beatsElapsed(0 + sequenceStart), half);
+            playBass(cp[1][0]/2, beatsElapsed(4 + 0 + sequenceStart), half);
+            playBass(cp[2][0]/2, beatsElapsed(8 + 0 + sequenceStart), half);
+            playBass(cp[3][0]/2, beatsElapsed(12 + 0 + sequenceStart), half);
             break;
         case 3: //[X - X -]
-            playBass(getFreq("C", 2, transpose), beatsElapsed(0 + sequenceStart), quarter);
-            playBass(getFreq("C", 2, transpose), beatsElapsed(3 + sequenceStart), quarter);
-            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 0 + sequenceStart), quarter);
-            playBass(getFreq("G", 2, transpose), beatsElapsed(4 + 3 + sequenceStart), quarter);
-            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 0 + sequenceStart), quarter);
-            playBass(getFreq("E", 2, transpose), beatsElapsed(8 + 3 + sequenceStart), quarter);
-            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 0 + sequenceStart), quarter);
-            playBass(getFreq("F", 2, transpose), beatsElapsed(12 + 3 + sequenceStart), quarter);
+            playBass(cp[0][0]/2, beatsElapsed(0 + sequenceStart), quarter);
+            playBass(cp[0][0]/2, beatsElapsed(3 + sequenceStart), quarter);
+            playBass(cp[1][0]/2, beatsElapsed(4 + 0 + sequenceStart), quarter);
+            playBass(cp[1][0]/2, beatsElapsed(4 + 3 + sequenceStart), quarter);
+            playBass(cp[2][0]/2, beatsElapsed(8 + 0 + sequenceStart), quarter);
+            playBass(cp[2][0]/2, beatsElapsed(8 + 3 + sequenceStart), quarter);
+            playBass(cp[3][0]/2, beatsElapsed(12 + 0 + sequenceStart), quarter);
+            playBass(cp[3][0]/2, beatsElapsed(12 + 3 + sequenceStart), quarter);
             break;
         }
     }
 
-    void endingBass(int sequenceStart, int transpose){
-        playBass(getFreq("C", 2, transpose), beatsElapsed(0 + sequenceStart), eighth);
-        playBass(getFreq("C", 2, transpose), beatsElapsed(1 + sequenceStart), eighth);
-        playBass(getFreq("C", 2, transpose), beatsElapsed(2 + sequenceStart), eighth);
+    void endingBass(int sequenceStart, int transpose, vector<vector<float>> cp){
+        playBass(cp[0][0]/2, beatsElapsed(0 + sequenceStart), eighth);
+        playBass(cp[0][0]/2, beatsElapsed(1 + sequenceStart), eighth);
+        playBass(cp[0][0]/2, beatsElapsed(2 + sequenceStart), eighth);
     }
 
     // kick drum:
@@ -697,51 +704,209 @@ public:
         }
     }
 
-    // void playSingleCycleLFSR(bool input1, bool input2, int sequenceStart, int numBeats){
-    //     //LFSR provides 4 outputs = {or, xor, and, nand}
-    //     //playLFSR uses the output from LFSR as input for the next beat
-    //     bool a = input1;
-    //     bool b = input2;
-    //     vector<bool>output;
-    //     for(int c = sequenceStart; c < sequenceStart + numBeats; c++){
-    //         output = LFSR(a, b);
-    //         if(output[0]){
-    //             playKick(200, beatsElapsed(c + sequenceStart));
-    //         }
-    //         if(output[1]){
-    //             playKick(150, beatsElapsed(c + sequenceStart + .5));
-    //         }
-    //         if(output[2]){
-    //             playHiHat(beatsElapsed(c + sequenceStart));
-    //         }
-    //         if(output[3]){
-    //             playSnare(beatsElapsed(c + sequenceStart));
-    //         }
-    //         a = output[1];
-    //         b = output[3];
-    //     }
-    // }
-
-    void playFibLFSRDrums(int prevState, int sequenceStart, int numBeats){
-        //4-bit LFSR, taps at 3, 4, generate a 15-cycle long sequence
-        //Reference: https://simple.wikipedia.org/wiki/Linear-feedback_shift_register
-        bool outputBit;
-        int prev = prevState;
-        for(int c = sequenceStart; c < sequenceStart + numBeats; c++){
-            outputBit = fibLFSR(prev, {0, 0, 1, 1});
-            if(outputBit){
-                playKick(200, beatsElapsed(sequenceStart + c));
-                cout << prev << ": X" << endl;
-            }
-            else{ cout << prev << ": -" << endl;}
-            prev = ((prev << 1)&0xF) | outputBit;
+    // hihat:
+    void hiHatPattern(int sw, int sequenceStart)
+    { // 3 different variations, 4 measures of 4 beats
+        switch (sw)
+        {
+        case 0:
+            playHiHat(beatsElapsed(3 + sequenceStart));
+            playHiHat(beatsElapsed(7 + sequenceStart));
+            playHiHat(beatsElapsed(7.5 + sequenceStart));
+            playHiHat(beatsElapsed(12 + sequenceStart));
+            playHiHat(beatsElapsed(13.5 + sequenceStart));
+            playHiHat(beatsElapsed(14.5 + sequenceStart));
+            break;
+        case 1:
+            playHiHat(beatsElapsed(1.5 + sequenceStart));
+            playHiHat(beatsElapsed(2.5 + sequenceStart));
+            playHiHat(beatsElapsed(3.5 + sequenceStart));
+            playHiHat(beatsElapsed(12 + sequenceStart));
+            playHiHat(beatsElapsed(13.5 + sequenceStart));
+            playHiHat(beatsElapsed(14.5 + sequenceStart));
+            playHiHat(beatsElapsed(15.5 + sequenceStart));
+            break;
+        case 2:
+            playHiHat(beatsElapsed(4 + sequenceStart));
+            playHiHat(beatsElapsed(8 + sequenceStart));
+            playHiHat(beatsElapsed(10 + sequenceStart));
+            playHiHat(beatsElapsed(12.5 + sequenceStart));
+            playHiHat(beatsElapsed(13.5 + sequenceStart));
+            playHiHat(beatsElapsed(14.5 + sequenceStart));
+            playHiHat(beatsElapsed(15.5 + sequenceStart));
+            break;
         }
+    }
+
+    //riser snare (inspired by Christine's Krewella demo!):
+    void riserPattern(int sequenceStart) {
+        for(int i = 0; i < 8; i++){
+            playSnare(beatsElapsed(0+sequenceStart+(i)));
+        }
+        for(int i = 0; i < 8; i++){
+            playSnare(beatsElapsed(8+sequenceStart+(i*.5)));
+        }
+        for(int i = 0; i < 16; i++){
+            playSnare(beatsElapsed(12+sequenceStart+(i*.25)));
+        } 
+  }
+
+    // Chord Progressions
+    void mainChordProgression(float sequenceStart, int transpose, vector<vector<float>> cp)
+    { // four measures total (4/4)
+        playChord(cp[0], 3, sequenceStart, whole);
+        playChord(cp[1], 3, beatsElapsed(4 + sequenceStart), whole);
+        playChord(cp[2], 3, beatsElapsed(8 + sequenceStart), whole);
+        playChord(cp[3], 3, beatsElapsed(12 + sequenceStart), whole);
+    }
+
+    void accompanyingChordProgression(float sequenceStart, int transpose, vector<vector<float>> cp)
+    { // 4 measures total
+        playChordOctaveUp(cp[0], 2, beatsElapsed(1.5 + sequenceStart), quarter);
+        playChordOctaveUp(cp[0], 2, beatsElapsed(3 + sequenceStart), eighth);
+
+        playChordOctaveUp(cp[1], 2, beatsElapsed(4 + 1.5 + sequenceStart), quarter);
+        playChordOctaveUp(cp[1], 2, beatsElapsed(4 + 3 + sequenceStart), eighth);
+
+        playChordOctaveUp(cp[2], 2, beatsElapsed(8 + 1.5 + sequenceStart), quarter);
+        playChordOctaveUp(cp[2], 2, beatsElapsed(8 + 3 + sequenceStart), eighth);
+
+        playChordOctaveUp(cp[3], 2, beatsElapsed(12 + 1.5 + sequenceStart), quarter);
+        playChordOctaveUp(cp[3], 2, beatsElapsed(12 + 3 + sequenceStart), eighth);
+    }
+
+    void arpChordProgression(float sequenceStart, int transpose, vector<vector<float>> cp) //similar to Bloodeater by Mom
+    { // 4 measures total
+        for(int i = 0; i < 4; i++){
+            playNote(cp[i][0], beatsElapsed(0 + sequenceStart), sixteenth);
+            playNote(cp[i][1], beatsElapsed(0.5 + sequenceStart), sixteenth);
+            playNote(cp[i][2], beatsElapsed(1 + sequenceStart), sixteenth);
+            playNote(cp[i][0]*2, beatsElapsed(1.5 + sequenceStart), sixteenth);
+            playNote(cp[i][0], beatsElapsed(3 + sequenceStart), sixteenth);
+        }
+    }
+
+    void transitionalChords(float sequenceStart, int transpose, vector<vector<float>> cp)
+    {
+        playChord(cp[2], 3, beatsElapsed(12 + sequenceStart), half);
+        playChord(cp[3], 3, beatsElapsed(14 + sequenceStart), half);
+    }
+
+    void choralC(float sequenceStart, int transpose){
+        playChoralSynth(getFreq("C", 4, transpose), beatsElapsed(sequenceStart), beatsElapsed(.25), whole);
+    }
+
+    void endingChords(float sequenceStart, int transpose, vector<vector<float>> cp)
+    {
+        playChord(cp[0], 3, beatsElapsed(sequenceStart), whole);
+
+        playNote(cp[0][0], beatsElapsed(4 + sequenceStart), whole); // idk what chord this is but it's not a fifth
+        playNote(cp[0][1], beatsElapsed(4 + sequenceStart), whole);
+
+        playNote(cp[0][0], beatsElapsed(8 + sequenceStart), whole * 2);
+    }
+
+    // MELODIES:
+    void endingMelody(float sequenceStart, int transpose)
+    {
+        playNote(getFreq("C", 4, transpose), beatsElapsed(12 + sequenceStart), eighth);
+        playNote(getFreq("D", 4, transpose), beatsElapsed(12.5 + sequenceStart), eighth);
+        playNote(getFreq("E", 4, transpose), beatsElapsed(13 + sequenceStart), quarter);
+        playNote(getFreq("D", 4, transpose), beatsElapsed(14 + sequenceStart), eighth);
+        playNote(getFreq("D", 4, transpose), beatsElapsed(15 + sequenceStart), eighth);
+        playNote(getFreq("C", 4, transpose), beatsElapsed(15.5 + sequenceStart), whole);
     }
 
     // SONG:
     void playTune()
     {
-        playFibLFSRDrums(0b1001, 0, 32);
+        //PREP:
+        srand((unsigned)time(NULL)); // seed the random number
+        int key = rand() % 12;       // Number of steps we'll transpose the composition upwards
+        int introLength = 1 + (rand() % 3); //Length of intro - 1, 2, or 3 phrases long
+        int bridgeLength = 1 + (rand() % 2); //Length of bridge - 1 or 2 phrases long
+        int hiHatRNG = rand() % 3; // set initial hi hat pattern
+        int bassRNG = rand() % 4; // set initial bass battern
+        vector<vector<float>> chordProgression = axisProgression("C", 3, key);
+
+        //PHRASE 1 (INTRO 1): DRUMS ONLY
+        if(introLength == 3){
+            kickPattern(0);
+        }
+
+        //PHRASE 2 (INTRO 2): DRUMS + BASSLINE + HIHAT
+        if(introLength == 2 || introLength == 3){
+            kickPattern((introLength-2)*16);
+            hiHatRNG = rand() % 3; // change hi hat pattern
+            hiHatPattern(hiHatRNG, (introLength-2) * 16);
+            bassPattern(bassRNG, (introLength-2) * 16, key, chordProgression);
+        }
+
+        //PHRASE 3 (INTRO 3/VERSE 1): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
+        kickPattern((introLength-1)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        hiHatPattern(hiHatRNG, (introLength-1)*16);
+        bassPattern(bassRNG, (introLength-1)*16, key, chordProgression);
+        mainChordProgression((introLength-1)*16, key, chordProgression);
+        accompanyingChordProgression((introLength-1)*16, key, chordProgression);
+        
+        //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER
+        kickPattern((introLength)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength)*16);
+        bassPattern(bassRNG, (introLength)*16, key, chordProgression);
+        mainChordProgression((introLength)*16, key, chordProgression);
+        accompanyingChordProgression((introLength)*16, key, chordProgression);
+        bassRNG = rand() % 4; // change bass pattern for bridge
+        riserPattern((introLength)*16);
+
+
+
+        //PHRASE 5 (BRIDGE 1): BASSLINE ONLY
+        if(bridgeLength == 2){
+            bassPattern(bassRNG, (introLength+1)*16, key, chordProgression);
+        }
+
+        //PHRASE 6 (BRIDGE 2): BASSLINE + ARP + TRANSITIONAL CHORDS
+        bassPattern(bassRNG, (introLength+bridgeLength)*16, key, chordProgression);
+        arpChordProgression((introLength+bridgeLength)*16, key, chordProgression); //beeps and boops
+        transitionalChords((introLength+bridgeLength)*16, key, chordProgression);
+
+        //PHRASE 7 (CHORUS): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + ARP
+        kickPattern((introLength+bridgeLength+1)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength + bridgeLength + 1)*16);
+        bassPattern(bassRNG, (introLength + bridgeLength + 1)*16, key, chordProgression);
+        mainChordProgression((introLength + bridgeLength + 1)*16, key, chordProgression);
+        accompanyingChordProgression((introLength+bridgeLength + 1)*16, key, chordProgression);
+        arpChordProgression((introLength + bridgeLength + 1)*16, key, chordProgression);
+
+        //PHRASE 8 (CHORUS 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + ARP
+        kickPattern((introLength + bridgeLength + 2)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength + bridgeLength + 2)*16);
+        bassPattern(bassRNG, (introLength + bridgeLength + 2)*16, key, chordProgression);
+        mainChordProgression((introLength + bridgeLength + 2)*16, key, chordProgression);
+        accompanyingChordProgression((introLength + bridgeLength + 2)*16, key, chordProgression);
+        arpChordProgression((introLength + bridgeLength + 2)*16, key, chordProgression);
+        riserPattern((introLength + bridgeLength + 2)*16);
+
+        //PHRASE 9 (OUTRO): ENDING CHORDS + ENDING MELODY + ENDING BASS
+        endingChords((introLength + bridgeLength + 3)*16, key, chordProgression);
+        endingMelody((introLength + bridgeLength + 3)*16, key);
+        endingBass((introLength + bridgeLength + 3)*16, key, chordProgression);
+
+
+        // //for troubleshooting lfsr:
+        // vector<bool> drumsSeq = getFibLFSRSequence(0b1101, 4, 16);
+        // for(int i = 0; i < 16; i++){
+        //     if(drumsSeq[i]){
+        //         playHiHat(beatsElapsed(i));
+        //     }
+        // }
     }
 };
 
