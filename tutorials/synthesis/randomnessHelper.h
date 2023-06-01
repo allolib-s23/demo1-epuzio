@@ -50,9 +50,50 @@ vector<bool> getFibLFSRSequence(int seed, int numBits, int sequenceLength){
 //MARKOV CHAINS CHORD PROGRESSIONS:
 //referenced https://sites.math.washington.edu/~conroy/m381-general/markovMusic/markovMusic.htm
 //and https://scholarship.claremont.edu/cgi/viewcontent.cgi?article=1848&context=jhm
+//and https://web.archive.org/web/20120206123155/http://www.cs.northwestern.edu/~pardo/publications/pardo-birmingham-aaai-05.pdf
 vector<float> markovNotes(string seed, int sequenceLength){
-    //given a seed (starting note), return "sequenceLength" number of notes according to
-    //the following probability matrix
+    //The following probabilities are heavily weighted towards major 7 chords starting at each note
+    //(1 = .36, 3 = .2, 5 = .25, 7 = .1)
+    //The remaining .1 percent is divided between minor third, tritone, raised fifth
+    vector<vector<float>> noteTransitionMatrix = {
+        {.36, 0, 0, .03, .2, 0, .03, .25, .03, 0, 0, .2}, //A
+		{.2, .36, 0, 0, .03, .2, 0, .03, .25, .03, 0, 0}, //A# / Bb
+		{0, .2, .36, 0, 0, .03, .2, 0, .03, .25, .03, 0}, //B
+		{0, 0, .2, .36, 0, 0, .03, .2, 0, .03, .25, .03}, //C
+		{.03, 0, 0, .2, .36, 0, 0, .03, .2, 0, .03, .25}, // C# / Db
+		{.25, .03, 0, 0, .2, .36, 0, 0, .03, .2, 0, .03}, // D 
+		{.03, .25, .03, 0, 0, .2, .36, 0, 0, .03, .2, 0}, // D# / Eb
+		{0, .03, .25, .03, 0, 0, .2, .36, 0, 0, .03, .2}, //E
+		{.2, 0, .03, .25, .03, 0, 0, .2, .36, 0, 0, .03}, //F #
+        {.03, .2, 0, .03, .25, .03, 0, 0, .2, .36, 0, 0}, //F
+		{0, .03, .2, 0, .03, .25, .03, 0, 0, .2, .36, 0}, // G
+		{0, 0, .03, .2, 0, .03, .25, .03, 0, 0, .2, .36}}; //G# / Ab
+
+    //Go down an octave, stay at current octave, or go up an octave?
+    vector<vector<float>> octaveTransitionMatrix = {
+        {0.2, 0.75, 0.05}, //A
+        {0.2, 0.75, 0.05}, //Bb
+        {0.15, 0.8, 0.05}, //B
+        {0.15, 0.8, 0.05}, //C
+        {0.1, 0.85, 0.05}, //C#
+        {0.1, 0.85, 0.05}, //D
+        {0.1, 0.80, 0.1}, //D#
+        {0.1, 0.80, 0.1}, //E
+        {0.05, 0.80, 0.15}, //F
+        {0.05, 0.80, 0.15}, //F#
+        {0.05, 0.75, 0.2}, //G
+        {0.05, 0.75, 0.2}, //G#
+    };
+
+    unordered_map<string, float> notes{
+        {"A", 0}, {"A#", 1}, {"Bb", 1}, {"B", 2}, {"C", 3}, {"C#", 4}, {"Db", 4}, {"D", 5}, {"D#", 6}, 
+        {"Eb", 6}, {"E", 7}, {"F", 8}, {"F#", 9}, {"Gb", 9}, {"G", 10}, {"G#", 11}, {"Ab", 11}
+    };
+
+    for(int i = 0; i < sequenceLength; i++){
+
+    }
+        
 } 
 
 
