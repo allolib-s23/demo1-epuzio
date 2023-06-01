@@ -51,38 +51,26 @@ vector<bool> getFibLFSRSequence(int seed, int numBits, int sequenceLength){
 //referenced https://sites.math.washington.edu/~conroy/m381-general/markovMusic/markovMusic.htm
 //and https://scholarship.claremont.edu/cgi/viewcontent.cgi?article=1848&context=jhm
 //and https://web.archive.org/web/20120206123155/http://www.cs.northwestern.edu/~pardo/publications/pardo-birmingham-aaai-05.pdf
-vector<float> markovNotes(string seed, int sequenceLength){
+vector<float> markovNotes(string startingNote, int sequenceLength){
     //The following probabilities are heavily weighted towards major 7 chords starting at each note
     //(1 = .36, 3 = .2, 5 = .25, 7 = .1)
     //The remaining .1 percent is divided between minor third, tritone, raised fifth
-    vector<vector<float>> noteTransitionMatrix = {
-        {.36, 0, 0, .03, .2, 0, .03, .25, .03, 0, 0, .2}, //A
-		{.2, .36, 0, 0, .03, .2, 0, .03, .25, .03, 0, 0}, //A# / Bb
-		{0, .2, .36, 0, 0, .03, .2, 0, .03, .25, .03, 0}, //B
-		{0, 0, .2, .36, 0, 0, .03, .2, 0, .03, .25, .03}, //C
-		{.03, 0, 0, .2, .36, 0, 0, .03, .2, 0, .03, .25}, // C# / Db
-		{.25, .03, 0, 0, .2, .36, 0, 0, .03, .2, 0, .03}, // D 
-		{.03, .25, .03, 0, 0, .2, .36, 0, 0, .03, .2, 0}, // D# / Eb
-		{0, .03, .25, .03, 0, 0, .2, .36, 0, 0, .03, .2}, //E
-		{.2, 0, .03, .25, .03, 0, 0, .2, .36, 0, 0, .03}, //F #
-        {.03, .2, 0, .03, .25, .03, 0, 0, .2, .36, 0, 0}, //F
-		{0, .03, .2, 0, .03, .25, .03, 0, 0, .2, .36, 0}, // G
-		{0, 0, .03, .2, 0, .03, .25, .03, 0, 0, .2, .36}}; //G# / Ab
+    discrete_distribution<int> noteTransitionProbability({36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0, 2});
 
     //Go down an octave, stay at current octave, or go up an octave?
-    vector<vector<float>> octaveTransitionMatrix = {
-        {0.2, 0.75, 0.05}, //A
-        {0.2, 0.75, 0.05}, //Bb
-        {0.15, 0.8, 0.05}, //B
-        {0.15, 0.8, 0.05}, //C
-        {0.1, 0.85, 0.05}, //C#
-        {0.1, 0.85, 0.05}, //D
-        {0.1, 0.80, 0.1}, //D#
-        {0.1, 0.80, 0.1}, //E
-        {0.05, 0.80, 0.15}, //F
-        {0.05, 0.80, 0.15}, //F#
-        {0.05, 0.75, 0.2}, //G
-        {0.05, 0.75, 0.2}, //G#
+    unordered_map<int, vector<int>> octaveTransitionMatrix = {
+        {0, {20, 75, 5}}, //A
+        {1, {20, 75, 5}}, //Bb
+        {2, {15, 80, 5}}, //B
+        {3, {15, 80, 5}}, //C
+        {4, {10, 85, 5}}, //C#
+        {5, {10, 85, 5}}, //D
+        {6, {10, 80, 10}}, //D#
+        {7, {10, 80, 10}}, //E
+        {8, {5, 80, 15}}, //F
+        {9, {5, 80, 15}}, //F#
+        {10, {5, 65, 30}}, //G
+        {11, {5, 65, 30}}, //G#
     };
 
     unordered_map<string, float> notes{
@@ -90,8 +78,15 @@ vector<float> markovNotes(string seed, int sequenceLength){
         {"Eb", 6}, {"E", 7}, {"F", 8}, {"F#", 9}, {"Gb", 9}, {"G", 10}, {"G#", 11}, {"Ab", 11}
     };
 
+    int input = notes[startingNote];
+    vector<float> frequencies;
     for(int i = 0; i < sequenceLength; i++){
+        vector<int> octaveProbabilities = octaveTransitionMatrix[input];
+        discrete_distribution<int> octaveTransitionProbability(octaveProbabilities);
+        input = noteTransitionProbability(input);
 
+        
+        getFreq(input, )
     }
         
 } 
