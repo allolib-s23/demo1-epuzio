@@ -67,10 +67,7 @@ public:
         delay.maxDelay(1. / 27.5);
         delay.delay(1. / 900.0);
 
-        // addDisc(mMesh, 1.0, 30);
-
-        addRect(mMesh, .8, .8, 0, 0);
-        addAnnulus(mMesh, .8, 1.6, 4, 1);
+        addOctahedron(mMesh, .6);
 
         createInternalTriggerParameter("amplitude", 0.0, 0.0, 1.0);
         createInternalTriggerParameter("frequency", 60, 20, 5000);
@@ -187,14 +184,17 @@ public:
   gam::Sine<> mOsc1;
   gam::Sine<> mOsc3;
   gam::Sine<> mOsc5;
+  gam::Sine<> mOsc7;
 
   gam::Env<3> mAmpEnv;
-
-  // envelope follower to connect audio output to graphics
   gam::EnvFollow<> mEnvFollow;
-
-  // Additional members
   Mesh mMesh;
+  double a = 0;
+    double b = 0;
+    double timepose = 0;
+    Vec3f note_position;
+    Vec3f note_direction;
+
 
   // Initialize voice. This function will only be called once per voice when
   // it is created. Voices will be reused if they are idle.
@@ -204,10 +204,7 @@ public:
     mAmpEnv.curve(0); // make segments lines
     mAmpEnv.levels(0, 1, 1, 0);
     mAmpEnv.sustainPoint(2); // Make point 2 sustain until a release is issued
-
-    // We have the mesh be a rectangle
-    addTorus(mMesh);
-
+    addOctahedron(mMesh, .4);
     createInternalTriggerParameter("amplitude", 0.8, 0.0, 1.0);
     createInternalTriggerParameter("frequency", 440, 20, 5000);
     createInternalTriggerParameter("attackTime", 0.1, 0.01, 3.0);
@@ -228,6 +225,7 @@ public:
     mOsc1.freq(f);
     mOsc3.freq(f * 3);
     mOsc5.freq(f * 5);
+    mOsc7.freq(f * 7);
 
     float a = getInternalParameterValue("amplitude");
     mAmpEnv.lengths()[0] = getInternalParameterValue("attackTime");
@@ -237,7 +235,8 @@ public:
     {
       float s1 = mAmpEnv() * (mOsc1() * a +
                               mOsc3() * (a / 3.0) +
-                              mOsc5() * (a / 5.0));
+                              mOsc5() * (a / 5.0) +
+                              mOsc7() * (a / 7.0));
 
       float s2;
       mPan(s1, s1, s2);
@@ -252,28 +251,42 @@ public:
   }
 
   // The graphics processing function
-  void onProcess(Graphics &g) override {
+  void onProcess(Graphics &g) override
+  {
+    // empty if there are no graphics to draw
+    // Get the paramter values on every video frame, to apply changes to the
+    // current instance
     float frequency = getInternalParameterValue("frequency");
     float amplitude = getInternalParameterValue("amplitude");
-
+    timepose += 0.01;
+    // Now draw
     g.pushMatrix();
+    g.translate(note_position + note_direction * timepose);
     g.translate(sin(static_cast<double>(frequency)), cos(static_cast<double>(frequency)), -8);
     g.scale(frequency / 5000, frequency / 5000, frequency / 5000);
-    g.color(frequency / 1000, frequency / 1000, 10, 0.4);
+    g.color(frequency / 1000, 50, 200, 0.4);
     g.draw(mMesh);
     g.popMatrix();
 
     g.pushMatrix();
+    g.translate(note_position + note_direction * timepose);
     g.translate(sin(static_cast<double>(frequency)), cos(static_cast<double>(frequency)), -12);
     g.scale(frequency / 5000, 2 * frequency / 5000, frequency / 5000);
-    g.color(frequency / 1000, 10, 10, 0.4);
+    g.color(80, frequency / 1000, 50, 0.4);
     g.draw(mMesh);
     g.popMatrix();
 
     g.pushMatrix();
-    g.translate(cos(static_cast<double>(frequency)), sin(static_cast<double>(frequency)), -14);
+    g.translate(cos(static_cast<double>(frequency)), sin(static_cast<double>(frequency)), -16);
     g.scale(frequency / 5000, 3 * frequency / 5000, frequency / 5000);
-    g.color(frequency / 1000, 10, frequency / 10, 0.4);
+    g.color(150, 110, frequency / 10, 0.4);
+    g.draw(mMesh);
+    g.popMatrix();
+
+    g.pushMatrix();
+    g.translate(cos(static_cast<double>(frequency)), sin(static_cast<double>(frequency)), -20);
+    g.scale(frequency / 5000, 3 * frequency / 5000, frequency / 5000);
+    g.color(150, 110, frequency / 10, 0.4);
     g.draw(mMesh);
     g.popMatrix();
   }
