@@ -121,57 +121,26 @@ vector<vector<float>> axisProgression(string n, int octave, int transpose = 0){
 //MARKOV CHAINS CHORD PROGRESSIONS:
 //referenced https://sites.math.washington.edu/~conroy/m381-general/markovMusic/markovMusic.htm
 //and https://scholarship.claremont.edu/cgi/viewcontent.cgi?article=1848&context=jhm
-vector<float> markovNotes(string n, int octave, int sequenceLength){
-    //The following probabilities are heavily weighted towards major 7 chords starting at each note
+vector<float> markovNotes(string n, int octave, int transpose, int sequenceLength){
+    //The following probabilities are heavily weighted towards a major 7 chord starting at the note A
     //(1 = .36, 3 = .2, 5 = .25, 7 = .1)
     //The remaining .1 percent is divided between minor third, tritone, raised fifth
-    unordered_map<int, vector<int>> noteTransitionMatrix = {
-        {0, {36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0, 20}}, //A
-		{1, {20, 36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0}}, //A# / Bb
-		{2, {0, 20, 36, 0, 0, 3, 20, 0, 3, 25, 3, 0}}, //B
-		{3, {0, 0, 20, 36, 0, 0, 3, 20, 0, 3, 25, 3}}, //C
-		{4, {3, 0, 0, 20, 36, 0, 0, 3, 20, 0, 3, 25}}, // C# / Db
-		{5, {25, 3, 0, 0, 20, 36, 0, 0, 3, 20, 0, 3}}, // D 
-		{6, {3, 25, 3, 0, 0, 20, 36, 0, 0, 3, 20, 0}}, // D# / Eb
-		{7, {0, 3, 25, 3, 0, 0, 20, 36, 0, 0, 3, 20}}, //E
-		{8, {20, 0, 3, 25, 3, 0, 0, 20, 36, 0, 0, 3}}, //F #
-        {9, {3, 20, 0, 3, 25, 3, 0, 0, 20, 36, 0, 0}}, //F
-		{10, {0, 3, 20, 0, 3, 25, 3, 0, 0, 20, 36, 0}}, // G
-		{11, {0, 0, 3, 20, 0, 3, 25, 3, 0, 0, 20, 36}} //G# / Ab
-    }; 
+    vector<int> noteTransitionMatrix = {36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0, 20};
 
     //Go down an octave, stay at current octave, or go up an octave?
-    unordered_map<int, vector<int>> octaveTransitionMatrix = {
-        {0, {20, 75, 5}}, //A
-        {1, {20, 75, 5}}, //Bb
-        {2, {15, 80, 5}}, //B
-        {3, {15, 80, 5}}, //C
-        {4, {10, 85, 5}}, //C#
-        {5, {10, 85, 5}}, //D
-        {6, {10, 80, 10}}, //D#
-        {7, {10, 80, 10}}, //E
-        {8, {5, 80, 15}}, //F
-        {9, {5, 80, 15}}, //F#
-        {10, {5, 65, 30}}, //G
-        {11, {5, 65, 30}}, //G#
-    };
+    vector<int> octaveTransitionMatrix = {10, 85, 5};
 
-    
-    int noteInput = getDist(n);
-    int octaveInput = octave;
+    random_device rd;
+    mt19937 gen(rd());
+    discrete_distribution<> nextNote(noteTransitionMatrix.begin(), noteTransitionMatrix.end());
+    discrete_distribution<> nextOctave(octaveTransitionMatrix.begin(), octaveTransitionMatrix.end());
     vector<float> frequencies;
+    
+    int nN, nO;
     for(int i = 0; i < sequenceLength; i++){
-        srand((unsigned)time(NULL));
-        vector<int> nt = {1, 2, 3, 4};
-        // vector<int> oct = octaveTransitionMatrix[octaveInput];
-        discrete_distribution<> noteTransitionProbability(nt.begin(), nt.end());
-        // discrete_distribution<> octaveTransitionProbability(oct.begin(), oct.end()); 
-       
-        // cout << " nI " << noteTransitionProbability(rand) << endl;
-        // cout << " nC " << noteTransitionProbability(rand) << endl;
-        // noteInput = noteTransitionProbability(rand);
-        // octaveInput = octaveTransitionProbability(rand);
-        frequencies.push_back(getFreq(noteInput, octaveInput, 0));
+        nN = nextNote(gen);
+        nO = nextOctave(gen);
+        frequencies.push_back(getFreq(nN + transpose, nO, 0));
     }   
     return frequencies;
 } 

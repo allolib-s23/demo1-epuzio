@@ -44,35 +44,42 @@ public:
     gam::EnvFollow<> mEnvFollow;
     gam::Env<2> mPanEnv;
     gam::STFT stft = gam::STFT(4048, 4048 / 4, 0, gam::HANN, gam::MAG_FREQ);
-
+    // This time, let's use spectrograms for each notes as the visual components.
     Mesh mSpectrogram;
     vector<float> spectrum;
+    Mesh mMesh;
     double a = 0;
     double b = 0;
-    double timepose = 10;
+    double timepose = 0;
+    double spin = al::rnd::uniformS();
+    Vec3f note_position;
+    Vec3f note_direction;
 
-    // Additional members
-    Mesh mMesh;
-
-    virtual void init()
+    virtual void init() override
     {
-        mAmp = 1;
-        mDur = 2;
+        // Declare the size of the spectrum
+        spectrum.resize(4048 / 2 + 1);
+        // mSpectrogram.primitive(Mesh::POINTS);
+        mSpectrogram.primitive(Mesh::LINE_STRIP);
         mAmpEnv.levels(0, 1, 1, 0);
-        mPanEnv.curve(4);
-        env.decay(0.1);
+        mPanEnv.curve(2);
+        env.decay(0.03);
         delay.maxDelay(1. / 27.5);
-        delay.delay(1. / 440.0);
+        delay.delay(1. / 900.0);
 
-        addDisc(mMesh, 1.0, 30);
-        createInternalTriggerParameter("amplitude", 0.1, 0.0, 1.0);
+        // addDisc(mMesh, 1.0, 30);
+
+        addRect(mMesh, .8, .8, 0, 0);
+        addAnnulus(mMesh, .8, 1.6, 4, 1);
+
+        createInternalTriggerParameter("amplitude", 0.0, 0.0, 1.0);
         createInternalTriggerParameter("frequency", 60, 20, 5000);
         createInternalTriggerParameter("attackTime", 0.001, 0.001, 1.0);
-        createInternalTriggerParameter("releaseTime", 3.0, 0.1, 10.0);
-        createInternalTriggerParameter("sustain", 0.7, 0.0, 1.0);
+        createInternalTriggerParameter("releaseTime", .1, 0.1, 10.0);
+        createInternalTriggerParameter("sustain", 0.25, 0.0, 1.0);
         createInternalTriggerParameter("Pan1", 0.0, -1.0, 1.0);
         createInternalTriggerParameter("Pan2", 0.0, -1.0, 1.0);
-        createInternalTriggerParameter("PanRise", 0.0, -1.0, 1.0); // range check
+        createInternalTriggerParameter("PanRise", 3, 0, 3.0); // range check
     }
 
     //    void reset(){ env.reset(); }
@@ -99,31 +106,54 @@ public:
             mPan(s1, s1, s2);
             io.out(0) += s1;
             io.out(1) += s2;
+            // STFT for each notes
+            if (stft(s1))
+            { // Loop through all the frequency bins
+                for (unsigned k = 0; k < stft.numBins(); ++k)
+                {
+                    // Here we simply scale the complex sample
+                    spectrum[k] = tanh(pow(stft.bin(k).real(), 1.3));
+                }
+            }
         }
         if (mAmpEnv.done() && (mEnvFollow.value() < 0.001))
             free();
     }
 
-    virtual void onProcess(Graphics &g)
+    // The graphics processing function
+    void onProcess(Graphics &g) override
     {
+        a += spin;
+        b += spin;
+        timepose += 0.02;
+        // Get the paramter values on every video frame, to apply changes to the
+        // current instance
         float frequency = getInternalParameterValue("frequency");
         float amplitude = getInternalParameterValue("amplitude");
+        // Now draw
         g.pushMatrix();
-        g.translate(amplitude, amplitude, -4);
-        // g.scale(frequency/2000, frequency/4000, 1);
-        float scaling = 0.1;
-        g.scale(scaling * frequency / 200, scaling * frequency / 400, scaling * 1);
-        g.color(mEnvFollow.value(), frequency / 1000, mEnvFollow.value() * 10, 0.4);
+        g.depthTesting(true);
+        g.lighting(true);
+        g.translate(note_position + note_direction * timepose);
+        g.rotate(a, Vec3f(0, 1, 0));
+        g.rotate(b, Vec3f(1));
+        g.scale(0.3 + mAmpEnv() * 0.2, 0.3 + mAmpEnv() * 0.5, amplitude);
+        g.color(HSV(frequency / 1000, 0.5 + mAmpEnv() * 0.1, 0.3 + 0.5 * mAmpEnv()));
         g.draw(mMesh);
         g.popMatrix();
     }
 
     virtual void onTriggerOn() override
     {
-        updateFromParameters();
         mAmpEnv.reset();
+        timepose = 0;
+        updateFromParameters();
         env.reset();
         delay.zero();
+        mPanEnv.reset();
+        note_position = {0, 0, -15};
+        float angle = getInternalParameterValue("frequency") / 200;
+        note_direction = {sin(angle), cos(angle), 0};
     }
 
     virtual void onTriggerOff() override
@@ -143,9 +173,8 @@ public:
         mAmpEnv.levels()[2] = getInternalParameterValue("sustain");
         mAmpEnv.lengths()[0] = getInternalParameterValue("attackTime");
         mAmpEnv.lengths()[3] = getInternalParameterValue("releaseTime");
-
-        mPanEnv.lengths()[0] = mDur * (1 - mPanRise);
-        mPanEnv.lengths()[1] = mDur * mPanRise;
+        mPanEnv.lengths()[0] = mPanRise;
+        mPanEnv.lengths()[1] = mPanRise;
     }
 };
 
@@ -523,8 +552,6 @@ public:
     createInternalTriggerParameter("attackTime", 1.0, 0.01, 3.0);
     createInternalTriggerParameter("releaseTime", 3.0, 0.1, 10.0);
     createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
-
-    // Initalize MIDI device input
   }
 
   // The audio processing function
@@ -602,37 +629,92 @@ class MyApp : public App
 {
 public:
     SynthGUIManager<SineEnv> synthManager{"GenDemo"};
+    Mesh mSpectrogram;
+    vector<float> spectrum;
+    bool showGUI = true;
+    bool showSpectro = true;
+    bool navi = false;
+    gam::STFT stft = gam::STFT(4080, 4080 / 4, 0, gam::HANN, gam::MAG_FREQ);
 
-    void onCreate() override
+    void onInit()
+  {
+    // Check for connected MIDI devices
+    // if (midiIn.getPortCount() > 0)
+    // {
+    //   // Bind ourself to the RtMidiIn object, to have the onMidiMessage()
+    //   // callback called whenever a MIDI message is received
+    //   MIDIMessageHandler::bindTo(midiIn);
+
+    //   // Open the last device found
+    //   unsigned int port = midiIn.getPortCount() - 1;
+    //   midiIn.openPort(port);
+    //   printf("Opened port to %s\n", midiIn.getPortName(port).c_str());
+    // }
+    // else
+    // {
+    //   printf("Error: No MIDI devices found.\n");
+    // }
+    // Declare the size of the spectrum 
+    spectrum.resize(4080 / 2 + 1);
+  }
+  // The audio callback function. Called when audio hardware requires data
+  void onSound(AudioIOData &io) override
+  {
+    synthManager.render(io); // Render audio
+    // STFT
+    while (io())
     {
-        navControl().active(false);                   // Disable navigation via keyboard
-        gam::sampleRate(audioIO().framesPerSecond()); // Set sampling rate for Gamma objects from app's audio
-
-        imguiInit();
-        
-        synthManager.synthRecorder().verbose(true);
+      if (stft(io.out(0)))
+      { // Loop through all the frequency bins
+        for (unsigned k = 0; k < stft.numBins(); ++k)
+        {
+          // Here we simply scale the complex sample
+          spectrum[k] = tanh(pow(stft.bin(k).real(), 1.3) );
+          //spectrum[k] = stft.bin(k).real();
+        }
+      }
     }
+  }
 
-    // The audio callback function. Called when audio hardware requires data
-    void onSound(AudioIOData &io) override
+  void onAnimate(double dt) override
+  {
+    // The GUI is prepared here
+    imguiBeginFrame();
+    // Draw a window that contains the synth control panel
+    synthManager.drawSynthControlPanel();
+    imguiEndFrame();
+    navControl().active(navi);
+  }
+
+  // The graphics callback function.
+  void onDraw(Graphics &g) override
+  {
+    g.clear();
+    // Render the synth's graphics
+    synthManager.render(g);
+    // // Draw Spectrum
+    mSpectrogram.reset();
+    mSpectrogram.primitive(Mesh::LINE_STRIP);
+    if (showSpectro)
     {
-        synthManager.render(io); // Render audio
+      for (int i = 0; i < 4080 / 2; i++)
+      {
+        mSpectrogram.color(HSV(0.5 - spectrum[i] * 100));
+        mSpectrogram.vertex(i, spectrum[i], 0.0);
+      }
+      g.meshColor(); // Use the color in the mesh
+      g.pushMatrix();
+      g.translate(-5.0, -3, 0);
+      g.scale(100.0 / 4080, 100, 1.0);
+      g.draw(mSpectrogram);
+      g.popMatrix();
     }
-
-    void onAnimate(double dt) override
+    // GUI is drawn here
+    if (showGUI)
     {
-        // imguiBeginFrame();                    // The GUI is prepared here
-        // synthManager.drawSynthControlPanel(); // Draw a window that contains the synth control panel
-        // imguiEndFrame();
+      imguiDraw();
     }
-
-    // The graphics callback function.
-    void onDraw(Graphics &g) override
-    {
-        // g.clear();
-        // synthManager.render(g); // Render the synth's graphics
-        // imguiDraw();            // GUI is drawn here
-    }
+  }
 
     // Whenever a key is pressed, this function is called
     bool onKeyDown(Keyboard const &k) override
@@ -936,95 +1018,82 @@ public:
     // SONG:
     void playTune()
     {
+        //PREP:
+        srand((unsigned)time(NULL)); // seed the random number
+        int key = rand() % 12;       // Number of steps we'll transpose the composition upwards
+        int introLength = 1 + (rand() % 3); //Length of intro - 1, 2, or 3 phrases long
+        int bridgeLength = 1 + (rand() % 2); //Length of bridge - 1 or 2 phrases long
+        int hiHatRNG = rand() % 3; // set initial hi hat pattern
+        int bassRNG = rand() % 4; // set initial bass battern
+        vector<vector<float>> chordProgression = axisProgression("C", 3, key);
 
-        vector<bool> l = getFibLFSRSequence(0b1001, 4, 32);
-        for(int i = 0; i < 32; i++){
-            if(l[i]){playNote(440, beatsElapsed(i), sixteenth);}
-            cout << i << ": " << l[i] << endl;
+        //PHRASE 1 (INTRO 1): DRUMS ONLY
+        if(introLength == 3){
+            kickPattern(0);
         }
-        // vector<float> notes = markovNotes("C", 3, 16);
-        // for(int i = 0; i < 16; i++){
-        //     playNote(notes[i], beatsElapsed(i), sixteenth);
-        // }
 
-        // //PREP:
-        // srand((unsigned)time(NULL)); // seed the random number
-        // int key = rand() % 12;       // Number of steps we'll transpose the composition upwards
-        // int introLength = 1 + (rand() % 3); //Length of intro - 1, 2, or 3 phrases long
-        // int bridgeLength = 1 + (rand() % 2); //Length of bridge - 1 or 2 phrases long
-        // int hiHatRNG = rand() % 3; // set initial hi hat pattern
-        // int bassRNG = rand() % 4; // set initial bass battern
-        // vector<vector<float>> chordProgression = axisProgression("C", 3, key);
+        //PHRASE 2 (INTRO 2): DRUMS + BASSLINE + HIHAT
+        if(introLength == 2 || introLength == 3){
+            kickPattern((introLength-2)*16);
+            hiHatRNG = rand() % 3; // change hi hat pattern
+            hiHatPattern(hiHatRNG, (introLength-2) * 16);
+            bassPattern(bassRNG, (introLength-2) * 16, key, chordProgression);
+        }
 
-        // //PHRASE 1 (INTRO 1): DRUMS ONLY
-        // if(introLength == 3){
-        //     kickPattern(0);
-        // }
-
-        // //PHRASE 2 (INTRO 2): DRUMS + BASSLINE + HIHAT
-        // if(introLength == 2 || introLength == 3){
-        //     kickPattern((introLength-2)*16);
-        //     hiHatRNG = rand() % 3; // change hi hat pattern
-        //     hiHatPattern(hiHatRNG, (introLength-2) * 16);
-        //     bassPattern(bassRNG, (introLength-2) * 16, key, chordProgression);
-        // }
-
-        // //PHRASE 3 (INTRO 3/VERSE 1): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
-        // kickPattern((introLength-1)*16);
-        // hiHatRNG = rand() % 3; // change hi hat pattern
-        // hiHatPattern(hiHatRNG, (introLength-1)*16);
-        // bassPattern(bassRNG, (introLength-1)*16, key, chordProgression);
-        // mainChordProgression((introLength-1)*16, key, chordProgression);
-        // accompanyingChordProgression((introLength-1)*16, key, chordProgression);
+        //PHRASE 3 (INTRO 3/VERSE 1): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER START
+        kickPattern((introLength-1)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        hiHatPattern(hiHatRNG, (introLength-1)*16);
+        bassPattern(bassRNG, (introLength-1)*16, key, chordProgression);
+        mainChordProgression((introLength-1)*16, key, chordProgression);
+        accompanyingChordProgression((introLength-1)*16, key, chordProgression);
         
-        // //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER
-        // kickPattern((introLength)*16);
-        // hiHatRNG = rand() % 3; // change hi hat pattern
-        // bassRNG = rand() % 4; // change bass pattern
-        // hiHatPattern(hiHatRNG, (introLength)*16);
-        // bassPattern(bassRNG, (introLength)*16, key, chordProgression);
-        // mainChordProgression((introLength)*16, key, chordProgression);
-        // accompanyingChordProgression((introLength)*16, key, chordProgression);
-        // bassRNG = rand() % 4; // change bass pattern for bridge
-        // riserPattern((introLength)*16);
+        //PHRASE 4 (VERSE 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER
+        kickPattern((introLength)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength)*16);
+        bassPattern(bassRNG, (introLength)*16, key, chordProgression);
+        mainChordProgression((introLength)*16, key, chordProgression);
+        accompanyingChordProgression((introLength)*16, key, chordProgression);
+        bassRNG = rand() % 4; // change bass pattern for bridge
+        riserPattern((introLength)*16);
 
+        //PHRASE 5 (BRIDGE 1): BASSLINE ONLY
+        if(bridgeLength == 2){
+            bassPattern(bassRNG, (introLength+1)*16, key, chordProgression);
+        }
 
+        //PHRASE 6 (BRIDGE 2): BASSLINE + ARP + TRANSITIONAL CHORDS
+        bassPattern(bassRNG, (introLength+bridgeLength)*16, key, chordProgression);
+        arpChordProgression((introLength+bridgeLength)*16, key, chordProgression); //beeps and boops
+        transitionalChords((introLength+bridgeLength)*16, key, chordProgression);
 
-        // //PHRASE 5 (BRIDGE 1): BASSLINE ONLY
-        // if(bridgeLength == 2){
-        //     bassPattern(bassRNG, (introLength+1)*16, key, chordProgression);
-        // }
+        //PHRASE 7 (CHORUS): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + ARP
+        kickPattern((introLength+bridgeLength+1)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength + bridgeLength + 1)*16);
+        bassPattern(bassRNG, (introLength + bridgeLength + 1)*16, key, chordProgression);
+        mainChordProgression((introLength + bridgeLength + 1)*16, key, chordProgression);
+        accompanyingChordProgression((introLength+bridgeLength + 1)*16, key, chordProgression);
+        arpChordProgression((introLength + bridgeLength + 1)*16, key, chordProgression);
 
-        // //PHRASE 6 (BRIDGE 2): BASSLINE + ARP + TRANSITIONAL CHORDS
-        // bassPattern(bassRNG, (introLength+bridgeLength)*16, key, chordProgression);
-        // arpChordProgression((introLength+bridgeLength)*16, key, chordProgression); //beeps and boops
-        // transitionalChords((introLength+bridgeLength)*16, key, chordProgression);
+        //PHRASE 8 (CHORUS 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + ARP
+        kickPattern((introLength + bridgeLength + 2)*16);
+        hiHatRNG = rand() % 3; // change hi hat pattern
+        bassRNG = rand() % 4; // change bass pattern
+        hiHatPattern(hiHatRNG, (introLength + bridgeLength + 2)*16);
+        bassPattern(bassRNG, (introLength + bridgeLength + 2)*16, key, chordProgression);
+        mainChordProgression((introLength + bridgeLength + 2)*16, key, chordProgression);
+        accompanyingChordProgression((introLength + bridgeLength + 2)*16, key, chordProgression);
+        arpChordProgression((introLength + bridgeLength + 2)*16, key, chordProgression);
+        riserPattern((introLength + bridgeLength + 2)*16);
 
-        // //PHRASE 7 (CHORUS): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + ARP
-        // kickPattern((introLength+bridgeLength+1)*16);
-        // hiHatRNG = rand() % 3; // change hi hat pattern
-        // bassRNG = rand() % 4; // change bass pattern
-        // hiHatPattern(hiHatRNG, (introLength + bridgeLength + 1)*16);
-        // bassPattern(bassRNG, (introLength + bridgeLength + 1)*16, key, chordProgression);
-        // mainChordProgression((introLength + bridgeLength + 1)*16, key, chordProgression);
-        // accompanyingChordProgression((introLength+bridgeLength + 1)*16, key, chordProgression);
-        // arpChordProgression((introLength + bridgeLength + 1)*16, key, chordProgression);
-
-        // //PHRASE 8 (CHORUS 2): DRUMS + BASSLINE + HIHAT + CHORDS + CHORD ACCOMPANIMENT + RISER + ARP
-        // kickPattern((introLength + bridgeLength + 2)*16);
-        // hiHatRNG = rand() % 3; // change hi hat pattern
-        // bassRNG = rand() % 4; // change bass pattern
-        // hiHatPattern(hiHatRNG, (introLength + bridgeLength + 2)*16);
-        // bassPattern(bassRNG, (introLength + bridgeLength + 2)*16, key, chordProgression);
-        // mainChordProgression((introLength + bridgeLength + 2)*16, key, chordProgression);
-        // accompanyingChordProgression((introLength + bridgeLength + 2)*16, key, chordProgression);
-        // arpChordProgression((introLength + bridgeLength + 2)*16, key, chordProgression);
-        // riserPattern((introLength + bridgeLength + 2)*16);
-
-        // //PHRASE 9 (OUTRO): ENDING CHORDS + ENDING MELODY + ENDING BASS
-        // endingChords((introLength + bridgeLength + 3)*16, key, chordProgression);
-        // endingMelody((introLength + bridgeLength + 3)*16, key);
-        // endingBass((introLength + bridgeLength + 3)*16, key, chordProgression);
+        //PHRASE 9 (OUTRO): ENDING CHORDS + ENDING MELODY + ENDING BASS
+        endingChords((introLength + bridgeLength + 3)*16, key, chordProgression);
+        endingMelody((introLength + bridgeLength + 3)*16, key);
+        endingBass((introLength + bridgeLength + 3)*16, key, chordProgression);
 
 
         // //for troubleshooting lfsr:
