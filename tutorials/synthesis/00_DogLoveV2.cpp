@@ -189,15 +189,12 @@ public:
   gam::Sine<> mOsc5;
 
   gam::Env<3> mAmpEnv;
-    gam::EnvFollow<> mEnvFollow;
-  // Draw parameters
+
+  // envelope follower to connect audio output to graphics
+  gam::EnvFollow<> mEnvFollow;
+
+  // Additional members
   Mesh mMesh;
-  double a;
-  double b;
-  double spin = al::rnd::uniformS();
-  double timepose = 0;
-  Vec3f note_position;
-  Vec3f note_direction;
 
   // Initialize voice. This function will only be called once per voice when
   // it is created. Voices will be reused if they are idle.
@@ -208,11 +205,8 @@ public:
     mAmpEnv.levels(0, 1, 1, 0);
     mAmpEnv.sustainPoint(2); // Make point 2 sustain until a release is issued
 
-    
-    // We have the mesh be a sphere
-    addSphere(mMesh, 0.3, 50, 50);
-    mMesh.decompress();
-    mMesh.generateNormals();
+    // We have the mesh be a rectangle
+    addTorus(mMesh);
 
     createInternalTriggerParameter("amplitude", 0.8, 0.0, 1.0);
     createInternalTriggerParameter("frequency", 440, 20, 5000);
@@ -257,28 +251,29 @@ public:
       free();
   }
 
-  // The triggering functions just need to tell the envelope to start or release
-  // The audio processing function checks when the envelope is done to remove
-  // the voice from the processing chain.
   // The graphics processing function
-  void onProcess(Graphics &g) override
-  {
-    a += spin;
-    b += spin;
-    timepose += 0.02;
-    // Get the paramter values on every video frame, to apply changes to the
-    // current instance
+  void onProcess(Graphics &g) override {
     float frequency = getInternalParameterValue("frequency");
     float amplitude = getInternalParameterValue("amplitude");
-    // Now draw
+
     g.pushMatrix();
-    g.depthTesting(true);
-    g.lighting(true);
-    g.translate(note_position + note_direction * timepose);
-    g.rotate(a, Vec3f(0, 1, 0));
-    g.rotate(b, Vec3f(1));
-    g.scale(0.3 + mAmpEnv() * 0.2, 0.3 + mAmpEnv() * 0.5, amplitude);
-    g.color(HSV((frequency / 1000), 0.5 + mAmpEnv() * 0.1, 0.3 + 0.5 * mAmpEnv()));
+    g.translate(sin(static_cast<double>(frequency)), cos(static_cast<double>(frequency)), -8);
+    g.scale(frequency / 5000, frequency / 5000, frequency / 5000);
+    g.color(frequency / 1000, frequency / 1000, 10, 0.4);
+    g.draw(mMesh);
+    g.popMatrix();
+
+    g.pushMatrix();
+    g.translate(sin(static_cast<double>(frequency)), cos(static_cast<double>(frequency)), -12);
+    g.scale(frequency / 5000, 2 * frequency / 5000, frequency / 5000);
+    g.color(frequency / 1000, 10, 10, 0.4);
+    g.draw(mMesh);
+    g.popMatrix();
+
+    g.pushMatrix();
+    g.translate(cos(static_cast<double>(frequency)), sin(static_cast<double>(frequency)), -14);
+    g.scale(frequency / 5000, 3 * frequency / 5000, frequency / 5000);
+    g.color(frequency / 1000, 10, frequency / 10, 0.4);
     g.draw(mMesh);
     g.popMatrix();
   }
@@ -286,17 +281,7 @@ public:
   // The triggering functions just need to tell the envelope to start or release
   // The audio processing function checks when the envelope is done to remove
   // the voice from the processing chain.
-  void onTriggerOn() override
-  {
-    float angle = getInternalParameterValue("frequency") / 200;
-    mAmpEnv.reset();
-    a = al::rnd::uniform();
-    b = al::rnd::uniform();
-    timepose = 0;
-    note_position = {0, 0, 0};
-    note_direction = {sin(angle), cos(angle), 0};
-  }
-
+  void onTriggerOn() override { mAmpEnv.reset(); }
   void onTriggerOff() override { mAmpEnv.release(); }
 };
 
@@ -628,109 +613,61 @@ public:
 class MyApp : public App
 {
 public:
-    SynthGUIManager<SineEnv> synthManager{"GenDemo"};
-    Mesh mSpectrogram;
-    vector<float> spectrum;
-    bool showGUI = true;
-    bool showSpectro = true;
-    bool navi = false;
-    gam::STFT stft = gam::STFT(4080, 4080 / 4, 0, gam::HANN, gam::MAG_FREQ);
+  SynthGUIManager<SineEnv> synthManager {"synth8"};
+  //    ParameterMIDI parameterMIDI;
 
-    void onInit()
-  {
-    // Check for connected MIDI devices
-    // if (midiIn.getPortCount() > 0)
-    // {
-    //   // Bind ourself to the RtMidiIn object, to have the onMidiMessage()
-    //   // callback called whenever a MIDI message is received
-    //   MIDIMessageHandler::bindTo(midiIn);
-
-    //   // Open the last device found
-    //   unsigned int port = midiIn.getPortCount() - 1;
-    //   midiIn.openPort(port);
-    //   printf("Opened port to %s\n", midiIn.getPortName(port).c_str());
-    // }
-    // else
-    // {
-    //   printf("Error: No MIDI devices found.\n");
-    // }
-    // Declare the size of the spectrum 
-    spectrum.resize(4080 / 2 + 1);
+  virtual void onInit( ) override {
+    imguiInit();
+    navControl().active(false);  // Disable navigation via keyboard, since we
+                              // will be using keyboard for note triggering
+    // Set sampling rate for Gamma objects from app's audio
+    gam::sampleRate(audioIO().framesPerSecond());
   }
-  // The audio callback function. Called when audio hardware requires data
-  void onSound(AudioIOData &io) override
-  {
-    synthManager.render(io); // Render audio
-    // STFT
-    while (io())
-    {
-      if (stft(io.out(0)))
-      { // Loop through all the frequency bins
-        for (unsigned k = 0; k < stft.numBins(); ++k)
-        {
-          // Here we simply scale the complex sample
-          spectrum[k] = tanh(pow(stft.bin(k).real(), 1.3) );
-          //spectrum[k] = stft.bin(k).real();
-        }
-      }
+
+    void onCreate() override {
+        // Play example sequence. Comment this line to start from scratch
+        //    synthManager.synthSequencer().playSequence("synth8.synthSequence");
+
+        // bossa(0.0, 150, 64);
+
+        synthManager.synthRecorder().verbose(true);
     }
-  }
 
-  void onAnimate(double dt) override
-  {
-    // The GUI is prepared here
-    imguiBeginFrame();
-    // Draw a window that contains the synth control panel
-    synthManager.drawSynthControlPanel();
-    imguiEndFrame();
-    navControl().active(navi);
-  }
-
-  // The graphics callback function.
-  void onDraw(Graphics &g) override
-  {
-    g.clear();
-    // Render the synth's graphics
-    synthManager.render(g);
-    // // Draw Spectrum
-    mSpectrogram.reset();
-    mSpectrogram.primitive(Mesh::LINE_STRIP);
-    if (showSpectro)
-    {
-      for (int i = 0; i < 4080 / 2; i++)
-      {
-        mSpectrogram.color(HSV(0.5 - spectrum[i] * 100));
-        mSpectrogram.vertex(i, spectrum[i], 0.0);
-      }
-      g.meshColor(); // Use the color in the mesh
-      g.pushMatrix();
-      g.translate(-5.0, -3, 0);
-      g.scale(100.0 / 4080, 100, 1.0);
-      g.draw(mSpectrogram);
-      g.popMatrix();
+    void onSound(AudioIOData& io) override {
+        synthManager.render(io);  // Render audio
     }
-    // GUI is drawn here
-    if (showGUI)
-    {
-      imguiDraw();
-    }
-  }
 
-    // Whenever a key is pressed, this function is called
-    bool onKeyDown(Keyboard const &k) override
-    {
+    void onAnimate(double dt) override {
+        imguiBeginFrame();
+        synthManager.drawSynthControlPanel();
+        imguiEndFrame();
+    }
+
+    void onDraw(Graphics& g) override {
+        g.clear();
+        synthManager.render(g);
+
+        // Draw GUI
+        imguiDraw();
+    }
+
+    bool onKeyDown(Keyboard const& k) override {
+        // if (ParameterGUI::usingKeyboard()) {  // Ignore keys if GUI is using them
+        // return true;
+        // }
         playTune();
         return true;
     }
 
-    // Whenever a key is released this function is called
-    bool onKeyUp(Keyboard const &k) override
-    {
+    bool onKeyUp(Keyboard const& k) override {
+        int midiNote = asciiToMIDI(k.key());
+        if (midiNote > 0) {
+        synthManager.triggerOff(midiNote);
+        }
         return true;
     }
 
     void onExit() override { imguiShutdown(); }
-
     // INSTRUMENTS
     //  From Professor Conrad's Frere Jacques Demo:
     void playNote(float freq, float time, float duration, float amp = .2, float attack = 0.01, float decay = 0.01)
