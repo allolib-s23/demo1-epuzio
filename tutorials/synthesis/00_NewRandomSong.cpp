@@ -148,77 +148,6 @@ public:
     }
 };
 
-//from https://github.com/allolib-s23/demo1-christinetu15/commit/be12f5e16f4d86acaf9e83267f1c59426d44538e?diff=unified#diff-5bc96b00c5884959857fb7e15d9c746d97d1dc1683e45b2430aeb15a1fab22a8
-class SquareWave : public SynthVoice
-{
-public:
-  // Unit generators
-  gam::Pan<> mPan;
-  gam::Sine<> mOsc1;
-  gam::Sine<> mOsc3;
-  gam::Sine<> mOsc5;
-
-  gam::Env<3> mAmpEnv;
-
-  // Initialize voice. This function will only be called once per voice when
-  // it is created. Voices will be reused if they are idle.
-  void init() override
-  {
-    // Intialize envelope
-    mAmpEnv.curve(0); // make segments lines
-    mAmpEnv.levels(0, 1, 1, 0);
-    mAmpEnv.sustainPoint(2); // Make point 2 sustain until a release is issued
-
-    createInternalTriggerParameter("amplitude", 0.8, 0.0, 1.0);
-    createInternalTriggerParameter("frequency", 440, 20, 5000);
-    createInternalTriggerParameter("attackTime", 0.1, 0.01, 3.0);
-    createInternalTriggerParameter("releaseTime", 0.1, 0.1, 10.0);
-    createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
-  }
-
-  // The audio processing function
-  void onProcess(AudioIOData &io) override
-  {
-    // Get the values from the parameters and apply them to the corresponding
-    // unit generators. You could place these lines in the onTrigger() function,
-    // but placing them here allows for realtime prototyping on a running
-    // voice, rather than having to trigger a new voice to hear the changes.
-    // Parameters will update values once per audio callback because they
-    // are outside the sample processing loop.
-    float f = getInternalParameterValue("frequency");
-    mOsc1.freq(f);
-    mOsc3.freq(f * 3);
-    mOsc5.freq(f * 5);
-
-    float a = getInternalParameterValue("amplitude");
-    mAmpEnv.lengths()[0] = getInternalParameterValue("attackTime");
-    mAmpEnv.lengths()[2] = getInternalParameterValue("releaseTime");
-    mPan.pos(getInternalParameterValue("pan"));
-    while (io())
-    {
-      float s1 = mAmpEnv() * (mOsc1() * a +
-                              mOsc3() * (a / 3.0) +
-                              mOsc5() * (a / 5.0));
-
-      float s2;
-      mPan(s1, s1, s2);
-      io.out(0) += s1;
-      io.out(1) += s2;
-    }
-    // We need to let the synth know that this voice is done
-    // by calling the free(). This takes the voice out of the
-    // rendering chain
-    if (mAmpEnv.done())
-      free();
-  }
-
-  // The triggering functions just need to tell the envelope to start or release
-  // The audio processing function checks when the envelope is done to remove
-  // the voice from the processing chain.
-  void onTriggerOn() override { mAmpEnv.reset(); }
-  void onTriggerOff() override { mAmpEnv.release(); }
-};
-
 // From https://github.com/allolib-s21/notes-Mitchell57:
 class HiHat : public SynthVoice
 {
@@ -390,101 +319,152 @@ public:
     }
 };
 
-class SineEnv : public SynthVoice
-{
+using namespace gam;
+using namespace al;
+using namespace std;
+class Sub : public SynthVoice {
 public:
-    // Unit generators
-    gam::Pan<> mPan;
-    gam::Sine<> mOsc;
-    gam::Env<3> mAmpEnv;
-    // envelope follower to connect audio output to graphics
-    gam::EnvFollow<> mEnvFollow;
 
+    // Unit generators
+    float mNoiseMix;
+    gam::Pan<> mPan;
+    gam::ADSR<> mAmpEnv;
+    gam::EnvFollow<> mEnvFollow;  // envelope follower to connect audio output to graphics
+    gam::DSF<> mOsc;
+    gam::NoiseWhite<> mNoise;
+    gam::Reson<> mRes;
+    gam::Env<2> mCFEnv;
+    gam::Env<2> mBWEnv;
     // Additional members
     Mesh mMesh;
 
-    // Initialize voice. This function will only be called once per voice when
-    // it is created. Voices will be reused if they are idle.
-    void init() override
-    {
-        // Intialize envelope
-        mAmpEnv.curve(0); // make segments lines
-        mAmpEnv.levels(0, 1, 1, 0);
+    // Initialize voice. This function will nly be called once per voice
+    void init() override {
+        mAmpEnv.curve(0); // linear segments
+        mAmpEnv.levels(0,1.0,1.0,0); // These tables are not normalized, so scale to 0.3
         mAmpEnv.sustainPoint(2); // Make point 2 sustain until a release is issued
-
+        mCFEnv.curve(0);
+        mBWEnv.curve(0);
+        mOsc.harmonics(12);
         // We have the mesh be a sphere
         addDisc(mMesh, 1.0, 30);
 
-        // This is a quick way to create parameters for the voice. Trigger
-        // parameters are meant to be set only when the voice starts, i.e. they
-        // are expected to be constant within a voice instance. (You can actually
-        // change them while you are prototyping, but their changes will only be
-        // stored and aplied when a note is triggered.)
-
         createInternalTriggerParameter("amplitude", 0.3, 0.0, 1.0);
         createInternalTriggerParameter("frequency", 60, 20, 5000);
-        createInternalTriggerParameter("attackTime", 1.0, 0.01, 3.0);
+        createInternalTriggerParameter("attackTime", 0.1, 0.01, 3.0);
         createInternalTriggerParameter("releaseTime", 3.0, 0.1, 10.0);
+        createInternalTriggerParameter("sustain", 0.7, 0.0, 1.0);
+        createInternalTriggerParameter("curve", 4.0, -10.0, 10.0);
+        createInternalTriggerParameter("noise", 0.0, 0.0, 1.0);
+        createInternalTriggerParameter("envDur",1, 0.0, 5.0);
+        createInternalTriggerParameter("cf1", 400.0, 10.0, 5000);
+        createInternalTriggerParameter("cf2", 400.0, 10.0, 5000);
+        createInternalTriggerParameter("cfRise", 0.5, 0.1, 2);
+        createInternalTriggerParameter("bw1", 700.0, 10.0, 5000);
+        createInternalTriggerParameter("bw2", 900.0, 10.0, 5000);
+        createInternalTriggerParameter("bwRise", 0.5, 0.1, 2);
+        createInternalTriggerParameter("hmnum", 12.0, 5.0, 20.0);
+        createInternalTriggerParameter("hmamp", 1.0, 0.0, 1.0);
         createInternalTriggerParameter("pan", 0.0, -1.0, 1.0);
+
     }
 
-    // The audio processing function
-    void onProcess(AudioIOData &io) override
-    {
-        mOsc.freq(getInternalParameterValue("frequency"));
-        mAmpEnv.lengths()[0] = getInternalParameterValue("attackTime");
-        mAmpEnv.lengths()[2] = getInternalParameterValue("releaseTime");
-        mPan.pos(getInternalParameterValue("pan"));
-        while (io())
-        {
-            float s1 = mOsc() * mAmpEnv() * getInternalParameterValue("amplitude");
+    //
+    
+    virtual void onProcess(AudioIOData& io) override {
+        updateFromParameters();
+        float amp = getInternalParameterValue("amplitude");
+        float noiseMix = getInternalParameterValue("noise");
+        while(io()){
+            // mix oscillator with noise
+            float s1 = mOsc()*(1-noiseMix) + mNoise()*noiseMix;
+
+            // apply resonant filter
+            mRes.set(mCFEnv(), mBWEnv());
+            s1 = mRes(s1);
+
+            // appy amplitude envelope
+            s1 *= mAmpEnv() * amp;
+
             float s2;
-            mEnvFollow(s1);
-            mPan(s1, s1, s2);
+            mPan(s1, s1,s2);
             io.out(0) += s1;
             io.out(1) += s2;
         }
-        // We need to let the synth know that this voice is done
-        // by calling the free(). This takes the voice out of the
-        // rendering chain
-        if (mAmpEnv.done() && (mEnvFollow.value() < 0.001f))
-        {
-            free();
-        }
+        
+        
+        if(mAmpEnv.done() && (mEnvFollow.value() < 0.001f)) free();
     }
 
-    //   // The graphics processing function
-    //   void onProcess(Graphics &g) override
-    //   {
-    //     // Get the paramter values on every video frame, to apply changes to the
-    //     // current instance
-    //     float frequency = getInternalParameterValue("frequency");
-    //     float amplitude = getInternalParameterValue("amplitude");
-    //     // Now draw
-    //     g.pushMatrix();
-    //     // Move x according to frequency, y according to amplitude
-    //     g.translate(frequency / 200 - 3, amplitude, -8);
-    //     // Scale in the x and y directions according to amplitude
-    //     g.scale(1 - amplitude, amplitude, 1);
-    //     // Set the color. Red and Blue according to sound amplitude and Green
-    //     // according to frequency. Alpha fixed to 0.4
-    //     g.color(mEnvFollow.value(), frequency / 1000, mEnvFollow.value() * 10, 0.4);
-    //     g.draw(mMesh);
-    //     g.popMatrix();
-    //   }
+   virtual void onProcess(Graphics &g) {
+          float frequency = getInternalParameterValue("frequency");
+          float amplitude = getInternalParameterValue("amplitude");
+          g.pushMatrix();
+          g.translate(amplitude,  amplitude, -4);
+          //g.scale(frequency/2000, frequency/4000, 1);
+          float scaling = 0.1;
+          g.scale(scaling * frequency/200, scaling * frequency/400, scaling* 1);
+          g.color(mEnvFollow.value(), frequency/1000, mEnvFollow.value()* 10, 0.4);
+          g.draw(mMesh);
+          g.popMatrix();
+   }
+    virtual void onTriggerOn() override {
+        updateFromParameters();
+        mAmpEnv.reset();
+        mCFEnv.reset();
+        mBWEnv.reset();
+        
+    }
 
-    // The triggering functions just need to tell the envelope to start or release
-    // The audio processing function checks when the envelope is done to remove
-    // the voice from the processing chain.
-    void onTriggerOn() override { mAmpEnv.reset(); }
-    void onTriggerOff() override { mAmpEnv.release(); }
+    virtual void onTriggerOff() override {
+        mAmpEnv.triggerRelease();
+//        mCFEnv.triggerRelease();
+//        mBWEnv.triggerRelease();
+    }
+
+    void updateFromParameters() {
+        mOsc.freq(getInternalParameterValue("frequency"));
+        mOsc.harmonics(getInternalParameterValue("hmnum"));
+        mOsc.ampRatio(getInternalParameterValue("hmamp"));
+        mAmpEnv.attack(getInternalParameterValue("attackTime"));
+    //    mAmpEnv.decay(getInternalParameterValue("attackTime"));
+        mAmpEnv.release(getInternalParameterValue("releaseTime"));
+        mAmpEnv.levels()[1]=getInternalParameterValue("sustain");
+        mAmpEnv.levels()[2]=getInternalParameterValue("sustain");
+
+        mAmpEnv.curve(getInternalParameterValue("curve"));
+        mPan.pos(getInternalParameterValue("pan"));
+        mCFEnv.levels(getInternalParameterValue("cf1"),
+                      getInternalParameterValue("cf2"),
+                      getInternalParameterValue("cf1"));
+
+
+        mCFEnv.lengths()[0] = getInternalParameterValue("cfRise");
+        mCFEnv.lengths()[1] = 1 - getInternalParameterValue("cfRise");
+        mBWEnv.levels(getInternalParameterValue("bw1"),
+                      getInternalParameterValue("bw2"),
+                      getInternalParameterValue("bw1"));
+        mBWEnv.lengths()[0] = getInternalParameterValue("bwRise");
+        mBWEnv.lengths()[1] = 1- getInternalParameterValue("bwRise");
+
+        mCFEnv.totalLength(getInternalParameterValue("envDur"));
+        mBWEnv.totalLength(getInternalParameterValue("envDur"));
+    }
 };
 
 // We make an app.
 class MyApp : public App
 {
 public:
-    SynthGUIManager<SineEnv> synthManager{"GenDemo"};
+    SynthGUIManager<Sub> synthManager{"GenDemo"};
+
+    virtual void onInit( ) override {
+    imguiInit();
+    navControl().active(false);  // Disable navigation via keyboard, since we
+                              // will be using keyboard for note triggering
+    // Set sampling rate for Gamma objects from app's audio
+    gam::sampleRate(audioIO().framesPerSecond());
+  }
 
     void onCreate() override
     {
@@ -504,9 +484,9 @@ public:
 
     void onAnimate(double dt) override
     {
-        // imguiBeginFrame();                    // The GUI is prepared here
-        // synthManager.drawSynthControlPanel(); // Draw a window that contains the synth control panel
-        // imguiEndFrame();
+        imguiBeginFrame();                    // The GUI is prepared here
+        synthManager.drawSynthControlPanel(); // Draw a window that contains the synth control panel
+        imguiEndFrame();
     }
 
     // The graphics callback function.
@@ -533,13 +513,17 @@ public:
     void onExit() override { imguiShutdown(); }
 
     // INSTRUMENTS
-    //  From Professor Conrad's Frere Jacques Demo:
-    void playNote(float freq, float time, float duration, float amp = .2, float attack = 0.01, float decay = 0.01)
-    {
-        auto *voice = synthManager.synth().getVoice<SquareWave>();
-        // amp, freq, attack, release, pan
-        vector<VariantValue> params = vector<VariantValue>({amp, freq, 0.0, 0.0, 0.0});
-        voice->setTriggerParams(params);
+    //  From https://github.com/allolib-s23/demo1-zachmiller-ucsb/blob/main/tutorials/synthesis/demo3.cpp
+    void playNote(string preset, float freq, float time = 0.0, float duration = 2, float amp = 0.4, float attack_time = 0.5, float release_time = 0.5, float pan = 0.0) {
+        // if (preset_voices.find(preset) == preset_voices.end()) {
+        //     cout << "this preset does not exist in the specified folder" << endl;
+        //     return;
+        // }
+        Sub *voice = preset_voices[preset];
+        voice->setInternalParameterValue("frequency", freq);
+        voice->setInternalParameterValue("amplitude", amp);
+        voice->setInternalParameterValue("attackTime", attack_time);
+        voice->setInternalParameterValue("releaseTime", release_time);
         synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
     }
 
@@ -578,16 +562,6 @@ public:
         synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
     }
 
-    //  Modified from Professor Conrad's Frere Jacques Demo:
-    void playSine(float freq, float time, float duration, float amp = .2, float attack = 0.01, float decay = 0.01)
-    {
-        auto *voice = synthManager.synth().getVoice<SineEnv>();
-        // amp, freq, attack, release, pan
-        vector<VariantValue> params = vector<VariantValue>({amp, freq, 0.0, 0.0, 0.0});
-        voice->setTriggerParams(params);
-        synthManager.synthSequencer().addVoiceFromNow(voice, time, duration);
-    }
-
     // HELPER FUNCTIONS, CONSTS:
     float bpm = 130;
     const float beat = 60 / bpm;
@@ -615,9 +589,9 @@ public:
 
     void playChoralSynth(float freq, float playTime, float offset, float sus)
     {
-        playSine(freq, playTime, sus, .1);
-        playSine(freq + 1, playTime, sus, .1);
-        playSine(freq + 2, playTime, sus, .1);
+        playNote(freq, playTime, sus, .1);
+        playNote(freq + 1, playTime, sus, .1);
+        playNote(freq + 2, playTime, sus, .1);
     }
 
     void playBassProgresssion(vector<vector<float>> ap, int startSequence){ //16 measures
