@@ -79,6 +79,37 @@ vector<vector<float>> axisProgression(string n, int octave, int transpose = 0){
 }
 
 
+
+
+//Get random note spacing for a melody in 4/4
+//helper to return probability of playing a note at a 1/2 beat for a 4/4 measure
+bool getBernoulliProb(int numerator, int denominator){
+    random_device rd;
+    mt19937 gen(rd());
+    bernoulli_distribution dist(numerator/(float)denominator);
+    return dist(gen);
+}
+
+//Calculate whether to play a note based on the number of notes already played/number of notes in the measure
+vector<bool> getNoteSpacingForMeasure(int numNotes){
+    vector<bool> output;
+        float denominator = 8; //In 4/4 time, 8 eigth notes per measure
+        bool currentNote = 0;
+        for(int i = 0; i < 8; i++){
+            if(i % 2 ==0){ //more likely to play a note if it's at the start of a beat
+                currentNote = getBernoulliProb(numNotes, denominator/2);
+            } else{
+                currentNote = getBernoulliProb(numNotes, denominator);
+            }
+            output.push_back(currentNote);
+            denominator -= 1;
+            if(currentNote){numNotes--;}
+        }
+    return output;
+}
+
+
+
 //RANDOM MELODIES USING MARKOV CHAINS
 
 //Referenced: https://sites.math.washington.edu/~conroy/m381-general/markovMusic/markovMusic.htm
@@ -121,35 +152,6 @@ vector<float> getMarkovNotes(string n, int octave, int transpose, int sequenceLe
     } 
     return output;
 } 
-
-//Get random note spacing for a melody in 4/4
-//helper to return probability of playing a note at a 1/2 beat for a 4/4 measure
-bool getBernoulliProb(int numerator, int denominator){
-    random_device rd;
-    mt19937 gen(rd());
-    bernoulli_distribution dist(numerator/(float)denominator);
-    return dist(gen);
-}
-
-//Calculate whether to play a note based on the number of notes already played/number of notes in the measure
-vector<bool> getNoteSpacingForMeasure(int numNotes){
-    vector<bool> output;
-        float denominator = 8; //In 4/4 time, 8 eigth notes per measure
-        bool currentNote = 0;
-        for(int i = 0; i < 8; i++){
-            if(i % 2 ==0){ //more likely to play a note if it's at the start of a beat
-                currentNote = getBernoulliProb(numNotes, denominator/2);
-            } else{
-                currentNote = getBernoulliProb(numNotes, denominator);
-            }
-            output.push_back(currentNote);
-            denominator -= 1;
-            if(currentNote){numNotes--;}
-        }
-    return output;
-}
-
-
 
 //PSEUDO-RANDOM SEQUENCES USING LFSR
 

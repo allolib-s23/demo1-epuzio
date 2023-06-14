@@ -1070,15 +1070,18 @@ public:
       vector<float> melodyNotes = getMarkovNotes("C", 4, 0, 60);
 
       //melody:
+      vector<bool> melodyOut = getFibLFSRSequence(rand()%31+1, 5, 16); //LFSR to randomly play a chord on each beat
       for(int i = 0; i < 64; i++){
-        playBass(melodyNotes[i], beatsElapsed(i/2.0), eighth);
+          if(melodyOut[i]){
+            playBass(melodyNotes[i], beatsElapsed(i/2.0), quarter);
+          }
       }
 
       //chords:
       for(int i = 0; i < 64; i++){
         if(i % 2 == 0){
-          playGuitar(melodyNotes[i]/2, beatsElapsed(i/2.0), quarter, .03);
-          playGuitar(melodyNotes[i+1]/2, beatsElapsed(i/2.0), quarter, .03);
+          playGuitar(melodyNotes[i]/2, beatsElapsed(i/2.0), quarter, .2);
+          playGuitar(melodyNotes[i+1]/2, beatsElapsed(i/2.0), quarter, .2);
         } 
       }
 
