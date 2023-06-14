@@ -19,7 +19,7 @@
 #include "al/ui/al_ControlGUI.hpp"
 #include "al/ui/al_Parameter.hpp"
 
-#include "notestable.h" //theory class I wrote to make transposition a little easier
+#include "randomness.h" //theory class I wrote to make transposition a little easier
 #include <stdlib.h> //rand
 #include <time.h> //rand also
 

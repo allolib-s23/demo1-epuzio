@@ -15,7 +15,7 @@
 #include "al/ui/al_Parameter.hpp"
 
 //added:
-#include "notestable.h"
+#include "randomness.h"
 #include <memory> //from allolib/demo1-epuzio/al_ext/soundfile/examples/soundfile_player.cpp
 #include "al/app/al_App.hpp"
 #include "al/sound/al_SoundFile.hpp"

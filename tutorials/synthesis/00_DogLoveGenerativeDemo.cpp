@@ -21,7 +21,7 @@
 #include "al/ui/al_Parameter.hpp"
 #include "al/math/al_Random.hpp"
 
-#include "randomnessHelper.h" //theory class I wrote to transpose chords/notes
+#include "randomness.h" //theory class I wrote to transpose chords/notes
 #include <stdlib.h>     //To use to generate random numbers
 #include <time.h>       //To use to generate random numbers
 

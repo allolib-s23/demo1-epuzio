@@ -24,7 +24,7 @@
 #include "al/math/al_Random.hpp"
 #include "al/sound/al_SoundFile.hpp"
 
-#include "randomnessHelper.h" 
+#include "randomness.h" 
 #include <stdlib.h>     //To use to generate random numbers
 #include <time.h>       
 
