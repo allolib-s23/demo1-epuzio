@@ -5,11 +5,14 @@
 #include <unordered_map>
 using namespace std;
 
+//PSEUDO-RANDOM SEQUENCES USING LFSR
+
 //LFSR helper to return taps, given the number of bits in an LFSR cycle
 //Referenced: https://en.wikipedia.org/wiki/Linear-feedback_shift_register (under "m-sequence")
+//Double-check endianness for m-sequences
 int getLFSRTaps(int length){
     unordered_map<int, int> taps{
-        {2, 0x3}, {3, 0x6}, {4, 0xC}, {5, 0x14}, {6, 0x30}, {7, 0x60}, {8, 0xB8},
+        {2, 0x3}, {3, 0x6}, {4, 0x3}, {5, 0x5}, {6, 0x3}, {7, 0x3}, {8, 0xB8},
         {9, 0x110}, {10, 0x240}, {11, 0x500}, {12, 0xE08}, {13, 0x1C80}, {14, 0x3802},
         {15, 0x6000}, {16, 0xD008}
     };
@@ -18,49 +21,21 @@ int getLFSRTaps(int length){
 
 //Fibonnacci Linear Feedback Shift Register
 //Referenced: https://simple.wikipedia.org/wiki/Linear-feedback_shift_register
-//input is the seed for the LFSR, cycleLength is the number of bits in the LFSR,
-// sequenceLength is how many output bits we want to generate
+//Seed is the seed for the LFSR, cycleLength is the number of bits in the LFSR,
+//SequenceLength is how many output bits we want to generate
 vector<bool> getFibLFSRSequence(int seed, int numBits, int sequenceLength){
     int taps = getLFSRTaps(numBits);
-    cout << taps << endl;
     int prevSequence = seed;
     vector<bool> output;
     for(int i = 0; i < sequenceLength; i++){
-        bool outputBit = __builtin_parity(seed & taps);;
+        bool outputBit = (__builtin_parity(prevSequence & taps)&1);
         output.push_back(outputBit);
-        prevSequence = (prevSequence>>1);
-        prevSequence = prevSequence | (outputBit<<numBits);
+        prevSequence = (prevSequence>>1) | (outputBit<<(numBits-1));
     }
     return output;
 }
 
-//SPACING
 
-//helper to return probability of playing a note at a 1/2 beat
-bool getBernoulliProb(int numerator, int denominator){
-    random_device rd;
-    mt19937 gen(rd());
-    bernoulli_distribution dist(numerator/(float)denominator);
-    return dist(gen);
-}
-
-//Calculate whether to play a note based on the number of notes already played
-vector<bool> getNoteSpacing(int numNotes){
-    vector<bool> output;
-    float denominator = 8; //In 4/4 time, 8 eigth notes per measure
-    bool currentNote = 0;
-    for(int i = 0; i < 8; i++){
-        if(i % 2 ==0){ //more likely to play a note if it's at the start of a beat
-            currentNote = getBernoulliProb(numNotes, denominator/2);
-        } else{
-            currentNote = getBernoulliProb(numNotes, denominator);
-        }
-        output.push_back(currentNote);
-        denominator -= 1;
-        if(currentNote){numNotes--;}
-    }
-    return output;
-}
 
 
 //TRANSPOSITION AND CHORD PROGRESSIONS
@@ -139,83 +114,72 @@ vector<vector<float>> axisProgression(string n, int octave, int transpose = 0){
 
 
 
-//MARKOV CHAINS CHORD PROGRESSIONS:
-//referenced https://sites.math.washington.edu/~conroy/m381-general/markovMusic/markovMusic.htm
+//RANDOM MELODIES USING MARKOV CHAINS
+
+//Referenced: https://sites.math.washington.edu/~conroy/m381-general/markovMusic/markovMusic.htm
 //and https://scholarship.claremont.edu/cgi/viewcontent.cgi?article=1848&context=jhm
-// string getNextMarkovNote(string currentNote, int transpose){
-//     int sw = currentNote(getDist);
-//     switch(sw){
-//         case 0:
-//             vector<int> probabilities = {.36, 0, 0, .03, .2, 0, .03, .25, .03, 0, 0, .2}; //A
-//             discrete_distribution<> nextNote(probabilities);
-//             return 
-//         case 1:
-//             break;
-//         case 2:
-//             break;
-//         case 3:
-//             break;
-//         case 4:
-//             break;
-//         case 5:
-//             break;
-//     }
-// }
-
-
-
-vector<float> markovNotes(string n, int octave, int transpose, int sequenceLength){
-    //The following probabilities are heavily weighted towards a major 7 chord starting at the note A
-    //(1 = .36, 3 = .2, 5 = .25, 7 = .1)
-    //The remaining .1 percent is divided between minor third, tritone, raised fifth
-    // vector<int> noteTransitionMatrix = {36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0, 20};
-    vector<vector<int>> noteTransitionMatrix = {
-        {36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0, 20}, //A
-		{20, 36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0}, //A# / Bb
-		{0, 20, 36, 0, 0, 3, 20, 0, 3, 25, 3, 0}, //B
-		{0, 0, 20, 36, 0, 0, 3, 20, 0, 3, 25, 3}, //C
-		{3, 0, 0, 02, 36, 0, 0, 3, 20, 0, 3, 25}, // C# / Db
-		{25, 3, 0, 0, 20, 36, 0, 0, 3, 20, 0, 3}, // D 
-		{3, 25, 3, 0, 0, 20, 36, 0, 0, 3, 20, 0}, // D# / Eb
-		{0, 3, 25, 3, 0, 0, 2, 36, 0, 0, 3, 20}, //E
-		{20, 0, 3, 25, 3, 0, 0, 20, 36, 0, 0, 3}, //F #
-        {3, 20, 0, 3, 25, 3, 0, 0, 20, 36, 0, 0}, //F
-		{0, 3, 20, 0, 3, 25, 3, 0, 0, 20, 36, 0}, // G
-		{0, 0, 3, 2, 0, 3, 25, 3, 0, 0, 20, 36} //G# / Ab
+//The following probabilities are heavily weighted towards a major 7 chord starting at the note A
+//(1 = .36, 3 = .2, 5 = .25, 7 = .1)
+//The remaining .1 percent is divided between minor third, tritone, raised fifth
+// vector<int> noteTransitionMatrix = {36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0, 20};
+vector<float> getMarkovNotes(string n, int octave, int transpose, int sequenceLength){
+    vector<float> output;
+    vector<discrete_distribution<int>> markovNoteProbabilities = {
+        discrete_distribution<int>({36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0, 20}), //A
+		discrete_distribution<int>({20, 36, 0, 0, 3, 20, 0, 3, 25, 3, 0, 0}), //A# / Bb
+		discrete_distribution<int>({0, 20, 36, 0, 0, 3, 20, 0, 3, 25, 3, 0}), //B
+		discrete_distribution<int>({0, 0, 20, 36, 0, 0, 3, 20, 0, 3, 25, 3}), //C
+		discrete_distribution<int>({3, 0, 0, 02, 36, 0, 0, 3, 20, 0, 3, 25}), // C# / Db
+		discrete_distribution<int>({25, 3, 0, 0, 20, 36, 0, 0, 3, 20, 0, 3}), // D 
+		discrete_distribution<int>({3, 25, 3, 0, 0, 20, 36, 0, 0, 3, 20, 0}), // D# / Eb
+		discrete_distribution<int>({0, 3, 25, 3, 0, 0, 2, 36, 0, 0, 3, 20}), //E
+		discrete_distribution<int>({20, 0, 3, 25, 3, 0, 0, 20, 36, 0, 0, 3}), //F #
+        discrete_distribution<int>({3, 20, 0, 3, 25, 3, 0, 0, 20, 36, 0, 0}), //F
+		discrete_distribution<int>({0, 3, 20, 0, 3, 25, 3, 0, 0, 20, 36, 0}), // G
+		discrete_distribution<int>({0, 0, 3, 2, 0, 3, 25, 3, 0, 0, 20, 36}) //G# / Ab
     }; 
-
-    //Go down an octave, stay at current octave, or go up an octave?
-    vector<int> octaveTransitionMatrix = {10, 85, 5};
-
+    vector<discrete_distribution<int>> markovOctaveProbabilities = {
+        discrete_distribution<int>({0, 0, 0, 0, 0, 0}), //0
+        discrete_distribution<int>({0, 0, 0, 0, 0, 0}), //1
+        discrete_distribution<int>({0, 0, 0, 0, 0, 0}), //2
+        discrete_distribution<int>({0, 0, 0, 40, 55, 5}), //3
+        discrete_distribution<int>({0, 0, 0, 5, 90, 5}), //4
+        discrete_distribution<int>({0, 0, 0, 5, 65, 30}), //5
+    }; 
     random_device rd;
     mt19937 gen(rd());
-    discrete_distribution<> nextNote(octaveTransitionMatrix);
-    discrete_distribution<> nextOctave(noteTransitionMatrix[getDist(n)]);
-    vector<float> frequencies;
-    
-    int nN, nO;
+    int currentNote = getDist(n);
+    int currentOctave = octave;
     for(int i = 0; i < sequenceLength; i++){
-        nN = nextNote(gen);
-        nO = nextOctave(gen);
-        frequencies.push_back(getFreq(nN + transpose, nO, 0));
-    }   
-    return frequencies;
+        currentNote = markovNoteProbabilities[currentNote](gen);
+        currentOctave = markovOctaveProbabilities[currentOctave](gen);
+        output.push_back(getFreq(currentNote, currentOctave, transpose));
+    } 
+    return output;
 } 
 
+//helper to return probability of playing a note at a 1/2 beat for a 4/4 measure
+bool getBernoulliProb(int numerator, int denominator){
+    random_device rd;
+    mt19937 gen(rd());
+    bernoulli_distribution dist(numerator/(float)denominator);
+    return dist(gen);
+}
 
-
-
-//drafts:
-//Referenced: https://en.wikipedia.org/wiki/Linear-feedback_shift_register
-//LFSR helper to xor every bit in an integer of length numBits
-// bool fibLFSR(int seed, int taps, int numBits){ 
-//     bool output = 0;
-//     while (seed) {
-//         if(taps&1){
-//             output ^= seed & 1;
-//         }
-//         seed >>= 1;
-//         taps >>= 1; 
-//     }
-//     return output;
-// }
+//Calculate whether to play a note based on the number of notes already played/number of notes in the measure
+vector<bool> getNoteSpacingForMeasure(int numNotes){
+    vector<bool> output;
+        float denominator = 8; //In 4/4 time, 8 eigth notes per measure
+        bool currentNote = 0;
+        for(int i = 0; i < 8; i++){
+            if(i % 2 ==0){ //more likely to play a note if it's at the start of a beat
+                currentNote = getBernoulliProb(numNotes, denominator/2);
+            } else{
+                currentNote = getBernoulliProb(numNotes, denominator);
+            }
+            output.push_back(currentNote);
+            denominator -= 1;
+            if(currentNote){numNotes--;}
+        }
+    return output;
+}
