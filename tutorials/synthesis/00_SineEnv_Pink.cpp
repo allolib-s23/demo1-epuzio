@@ -1,24 +1,5 @@
-//Copied from 01_SineEnv.cpp
-//Recreation of the opening notes of Boy's A Liar by PinkPanthress
-//Song is in F major (one b flat)
-//Used Mitchell's code for a kick + snare (here): https://github.com/allolib-s21/notes-Mitchell57
-
-
-
-//playing sound
-// #include <SFML/Audio.hpp> //https://cplusplus.com/forum/beginner/227532/
-// #include <string.h>
-// #include <stdio.h>
-
-
-//doesn't work?
-//for mp3 files
-// #include <SDL2/SDL.h> //https://medium.com/@edkins.sarah/set-up-sdl2-on-your-mac-without-xcode-6b0c33b723f7
-// // #include "SDL2/SDL.h"
-// // #include "SDL2/SDL_mixer.h"
-// static const char *VOCALS = "PinkVocal.mp3";
-
 #include <cstdio> // for printing to stdout
+#include <stdio.h>
 #include "Gamma/Analysis.h"
 #include "Gamma/Effects.h"
 #include "Gamma/Envelope.h"
@@ -458,12 +439,6 @@ public:
     playKick(150, timeElapsed(bpm, 3.5) + sequenceStart);
   }
 
-  // bool playVocals(){ 
-  //   sf::Music music;
-  //   if (!music.openFromFile("PinkVocal.mp3"))
-  //       return -1; // error
-  //   music.play();
-  // }
 
   void playTune(){ //one measure of drums, then the tune!
     // playVocals();
