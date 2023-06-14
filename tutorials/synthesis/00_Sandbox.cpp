@@ -756,7 +756,7 @@ public:
     // kick drum:
     void kickPattern(int sequenceStart)
     { // 24 measures of the same kick drum pattern
-        for (int i = 0; i < 24; i++)
+        for (int i = 0; i < 16; i++)
         {
             playKick(400, beatsElapsed(0 + (i * 4) + sequenceStart));
             playKick(300, beatsElapsed(1 + (i * 4) + sequenceStart));
@@ -767,8 +767,8 @@ public:
 
     // snare drum:
     void hiHatPattern(int sequenceStart)
-    { // 24 measures of the same syncopated snare drum pattern
-        for (int i = 0; i < 24; i++)
+    { // 24 measures of the same syncopated hi hat pattern
+        for (int i = 0; i < 16; i++)
         {
             playHiHat(beatsElapsed(1 + (i * 4) + sequenceStart));
             playHiHat(beatsElapsed(3 + (i * 4) + sequenceStart));
@@ -777,11 +777,11 @@ public:
 
     void lfsrSnare(int sequenceStart){
       srand(time(NULL));
-      vector<bool> seq = getFibLFSRSequence(rand()%31+1, 5, 16);
-      for(int i = 0; i < 64; i++){
+      vector<bool> seq = getFibLFSRSequence(rand()%31+1, 5, 64);
+      for(int i = 0; i < 24; i++){
           cout << seq[i] << endl;
           if(seq[i]){
-            lfsrSnare(beatsElapsed(i));
+              playSnare(beatsElapsed(i));
           }
       }
     }
@@ -811,17 +811,17 @@ public:
         } 
       }
 
-      // //atmospheric chords:
-      // vector<bool> atmosphericChordOut = getFibLFSRSequence(rand()%31+1, 5, 16); //LFSR to randomly play a chord every other beat
-      // for(int i = 0; i < 64; i++){
-      //   if(i % 8 == 0){
-      //     if(atmosphericChordOut[i]){
-      //       playNote(melodyNotes[i], beatsElapsed(i/2.0), whole*2);
-      //       playNote(melodyNotes[i+1], beatsElapsed(i/2.0), whole*2);
-      //       playNote(melodyNotes[i+2], beatsElapsed(i/2.0), whole*2);
-      //     }
-      //   } 
-      // }
+      //atmospheric chords:
+      vector<bool> atmosphericChordOut = getFibLFSRSequence(rand()%31+1, 5, 16); //LFSR to randomly play a chord every other beat
+      for(int i = 0; i < 64; i++){
+        if(i % 8 == 0){
+          if(atmosphericChordOut[i]){
+            playNote(melodyNotes[i], beatsElapsed(i/2.0), whole*2, .1);
+            playNote(melodyNotes[i+1], beatsElapsed(i/2.0), whole*2, .1);
+            playNote(melodyNotes[i+2], beatsElapsed(i/2.0), whole*2, .1);
+          }
+        } 
+      }
   }
 };
 
